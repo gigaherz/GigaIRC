@@ -1,0 +1,240 @@
+﻿using System;
+using System.Collections.ObjectModel;
+using System.ComponentModel;
+using System.Linq;
+using System.Windows;
+using System.Windows.Documents;
+using System.Windows.Input;
+using GigaIRC.Protocol;
+using GigaIRC.Util;
+
+namespace GigaIRC.Client.WPF.Dockable
+{
+    public partial class FlexList
+    {
+        public readonly ObservableCollection<LineInfo> Lines = new ObservableCollection<LineInfo>();
+        public ObservableCollection<object> ListItems { get; } = new ObservableCollection<object>();
+
+        readonly FlowDocument content;
+        private string _topicText;
+        private string _topicInfo;
+        private bool _listSorted;
+        private bool _showTopic = true;
+        private bool _showListbox = true;
+        private bool _showInput = true;
+        private object _itemsSource;
+        
+        public object ItemsSource
+        {
+            get { return _itemsSource; }
+            set
+            {
+                if (Equals(value, _itemsSource)) return;
+                _itemsSource = value;
+                OnPropertyChanged();
+            }
+        }
+
+        public bool ShowTopic
+        {
+            get { return _showTopic; }
+            set
+            {
+                if (value == _showTopic) return;
+                _showTopic = value;
+                OnPropertyChanged();
+                OnPropertyChanged(nameof(TopicVisibility));
+            }
+        }
+        public Visibility TopicVisibility => _showTopic ? Visibility.Visible : Visibility.Collapsed;
+
+        public bool ShowListbox
+        {
+            get { return _showListbox; }
+            set
+            {
+                if (value == _showListbox) return;
+                _showListbox = value;
+                OnPropertyChanged();
+                OnPropertyChanged(nameof(ListboxVisibility));
+            }
+        }
+        public Visibility ListboxVisibility => _showTopic ? Visibility.Visible : Visibility.Collapsed;
+
+        public bool ShowInput
+        {
+            get { return _showInput; }
+            set
+            {
+                if (value == _showInput) return;
+                _showInput = value;
+                OnPropertyChanged();
+            }
+        }
+        public Visibility InputVisibility => _showInput ? Visibility.Visible : Visibility.Collapsed;
+
+        public event TextInputEventHandler OnInput;
+
+        public Connection Connection { get; set; }
+        public string WindowId { get; set; }
+
+        public string TopicText
+        {
+            get { return _topicText; }
+            set
+            {
+                if (value == _topicText) return;
+                _topicText = value;
+                OnPropertyChanged();
+            }
+        }
+
+        public string TopicInfo
+        {
+            get { return _topicInfo; }
+            set
+            {
+                if (value == _topicInfo) return;
+                _topicInfo = value;
+                OnPropertyChanged();
+            }
+        }
+
+        public bool ListSorted
+        {
+            get { return _listSorted; }
+            set
+            {
+                if (value == _listSorted) return;
+                _listSorted = value;
+                OnPropertyChanged();
+            }
+        }
+
+        public FlexList()
+        {
+            _itemsSource = ListItems;
+
+            InitializeComponent();
+
+            ItemsListBox.Items.SortDescriptions.Add(new SortDescription("", ListSortDirection.Ascending));
+
+            content = MainContent.Document;
+            content.Blocks.Clear();
+        }
+
+        // IRCList interface implementation
+        public void Clear()
+        {
+            Lines.Clear();
+
+            content?.Blocks.Clear();
+        }
+
+        public void AddLine(int color, string text)
+        {
+            if (content == null)
+                return;
+
+            var line = new LineInfo((ColorCode)color, text);
+            Lines.Add(line);
+
+            Dispatcher.BeginInvoke(new Action(() =>
+            {
+                content.Blocks.Add(LineToParagraphConverter.ToParagraph(line));
+
+                //if(shouldScroll)
+                MainContent.ScrollToEnd();
+            }));
+        }
+
+        public void AddLine(int before, int color, string text)
+        {
+            if (content == null)
+                return;
+
+            var line = new LineInfo((ColorCode)color, text);
+            Lines.Insert(before, line);
+
+            Dispatcher.BeginInvoke(new Action(() =>
+            {
+                if (before == content.Blocks.Count)
+                {
+                    content.Blocks.Add(LineToParagraphConverter.ToParagraph(line));
+                }
+                else
+                {
+                    var after = content.Blocks.ElementAt(before);
+                    content.Blocks.InsertBefore(after, LineToParagraphConverter.ToParagraph(line));
+                }
+            }));
+        }
+
+        public void SetLine(int number, int color, string text)
+        {
+            if (content == null)
+                return;
+
+            var line = new LineInfo((ColorCode)color, text);
+            Lines[number] = line;
+
+            Dispatcher.BeginInvoke(new Action(() =>
+            {
+                var at = content.Blocks.ElementAt(number);
+                LineToParagraphConverter.ToParagraph(line, (Paragraph)at);
+            }));
+        }
+
+        public void RemoveLine(int number)
+        {
+            Lines.RemoveAt(number);
+
+            Dispatcher.BeginInvoke(new Action(() =>
+            {
+                content.Blocks.Remove(content.Blocks.ElementAt(number));
+            }));
+        }
+
+        public string GetLine(int number)
+        {
+            return Lines[number].Line;
+        }
+
+        public int GetLineColor(int number)
+        {
+            return (int)Lines[number].Color;
+        }
+
+        public int LineCount()
+        {
+            return Lines.Count;
+        }
+
+        private void Input_PreviewKeyDown(object sender, System.Windows.Input.KeyEventArgs e)
+        {
+            if (e.Key == Key.Return || e.Key == Key.Enter)
+            {
+                OnInput?.Invoke(this, new TextInputEventArgs(Input.Text));
+                Input.Text = null;
+            }
+        }
+
+        public void Close()
+        {
+            var anchorable = AnchorableParent;
+            anchorable?.Close();
+        }
+    }
+
+    public class TextInputEventArgs : EventArgs
+    {
+        public string Text;
+
+        public TextInputEventArgs(string text)
+        {
+            Text = text;
+        }
+    }
+
+    public delegate void TextInputEventHandler(object sender, TextInputEventArgs e);
+}

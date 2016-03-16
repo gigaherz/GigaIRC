@@ -1,0 +1,52 @@
+﻿<dockable:DockableBase
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:dockable="clr-namespace:GigaIRC.Client.WPF.Dockable"
+        xmlns:util="clr-namespace:GigaIRC.Util"
+        x:Class="GigaIRC.Client.WPF.Dockable.FlexList"
+        mc:Ignorable="d" 
+        d:DesignHeight="250" d:DesignWidth="500"
+        DesignBackground="{x:Static SystemColors.ControlBrush}"
+        Title="FlexList" DataContext="{Binding Mode=OneWay, RelativeSource={RelativeSource Self}}">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+        <Grid Visibility="{Binding Path=TopicVisibility}">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+            <Grid >
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <TextBox Text="{Binding TopicText}" />
+                <Button x:Name="Button" Grid.Column="1" Content="Set" Padding="8 2"/>
+            </Grid>
+            <TextBox Text="{Binding TopicInfo}" Grid.Row="1"
+                     Background="Transparent" BorderBrush="Transparent"
+                     BorderThickness="0" IsReadOnly="True"/>
+        </Grid>
+        <Grid Grid.Row="1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+            <RichTextBox x:Name="MainContent"
+                         VerticalScrollBarVisibility="Visible" HorizontalScrollBarVisibility="Disabled"
+                         Background="{x:Static util:ColorTheme.BackgroundBrush}"
+                         IsReadOnly = "True" IsReadOnlyCaretVisible = "False"
+                         FontFamily = "Consolas" FontSize = "12.5" />
+            <GridSplitter Visibility="{Binding Path=ListboxVisibility}" Grid.Column="1" ResizeBehavior="PreviousAndNext" Width="4" />
+            <ListBox x:Name="ItemsListBox" Width="150" Visibility="{Binding Path=ListboxVisibility}" Grid.Column="2" ItemsSource="{Binding ItemsSource}" />
+        </Grid>
+        <TextBox x:Name="Input" Grid.Row="2" Visibility="{Binding Path=InputVisibility}" PreviewKeyDown="Input_PreviewKeyDown" />
+    </Grid>
+</dockable:DockableBase>

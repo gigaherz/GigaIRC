@@ -1,0 +1,16 @@
+/.vs
+/bin
+/obj
+/packages
+/GigaIRC.Client/bin
+/GigaIRC.Client/obj
+/GigaIRC.Client.WPF/bin
+/GigaIRC.Client.WPF/obj
+/GigaIRC.Protocol/bin
+/GigaIRC.Protocol/obj
+
+/_ReSharper.*
+
+*.suo
+*.user
+*.DotSettings

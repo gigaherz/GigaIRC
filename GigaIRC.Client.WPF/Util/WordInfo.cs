@@ -1,33 +1,43 @@
 ﻿using System.Collections.Generic;
+using System.Diagnostics;
+using System.Text.RegularExpressions;
 
 namespace GigaIRC.Util
 {
     internal class WordInfo
     {
+        private static readonly Regex FindUrl = new Regex(@"(?i)\b((?:[a-z][\w-]+:(?:/{1,3}|[a-z0-9%])|www\d{0,3}[.]|[a-z0-9.\-]+[.][a-z]{2,4}/)(?:[^\s()<>]+|\(([^\s()<>]+|(\([^\s()<>]+\)))*\))+(?:\(([^\s()<>]+|(\([^\s()<>]+\)))*\)|[^\s`!()\[\]{};:'"".,<>?«»“”‘’]))", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+
         public ColorCode ForeColor { get; }
         public ColorCode BackColor { get; }
 
         public bool IsBold { get; }
+        public bool IsItalic { get; }
         public bool IsUnderline { get; }
         public bool IsReverse { get; }
 
+        public bool IsLink { get; }
+
         public string Word { get; }
 
-        public WordInfo(ColorCode back, ColorCode fore, bool bold, bool under, bool rev, string wrd)
+        public WordInfo(ColorCode back, ColorCode fore, bool bold, bool italic, bool under, bool rev, bool link, string wrd)
         {
             ForeColor = fore;
             BackColor = back;
             IsBold = bold;
+            IsItalic = italic;
             IsUnderline = under;
             IsReverse = rev;
+            IsLink = link;
             Word = wrd;
         }
 
         public static IEnumerable<WordInfo> Split(string line, ColorCode defColor)
         {
-            char[] chars = (line + ((char)0) + ((char)0)).ToCharArray();
+            char[] chars = (line + (char)0 + (char)0).ToCharArray();
 
             bool isBold = false;
+            bool isItalic = false;
             bool isUnderline = false;
             bool isReverse = false;
             ColorCode cfore = defColor;
@@ -37,33 +47,26 @@ namespace GigaIRC.Util
 
             for (int i = 0; i < chars.Length; i++)
             {
-
                 if (chars[i] < 32)
                 {
                     bool newWord = false;
 
-                    switch ((int)chars[i])
+                    switch (chars[i])
                     {
-                        case 2:
-                            newWord = true;
-                            break;
-                        case 3:
-                            newWord = true;
-                            break;
-                        case 15: // clear codes
-                            newWord = true;
-                            break;
-                        case 22: // reverse
-                            newWord = true;
-                            break;
-                        case 31:
+                        case EscapeCodes.Bold:
+                        case EscapeCodes.Color:
+                        case EscapeCodes.Reset:
+                        case EscapeCodes.Reverse:
+                        case EscapeCodes.Italic:
+                        case EscapeCodes.Underline:
                             newWord = true;
                             break;
                     }
 
                     if (newWord)
                     {
-                        yield return new WordInfo(cback, cfore, isBold, isUnderline, isReverse, word);
+                        foreach (var e in FindLinks(cback, cfore, isBold, isItalic, isUnderline, isReverse, word))
+                            yield return e;
                         word = "";
                     }
 
@@ -71,10 +74,10 @@ namespace GigaIRC.Util
                     {
                         case 0:
                             break; // ignore null chars
-                        case 2:
+                        case EscapeCodes.Bold:
                             isBold = !isBold;
                             break;
-                        case 3:
+                        case EscapeCodes.Color:
                             var foreColor = -1;
                             var backColor = (int)ColorTheme.Background;
 
@@ -132,14 +135,15 @@ namespace GigaIRC.Util
                                 }
                             }
                             break;
-                        case 15: // clear codes
+                        case EscapeCodes.Reset:
                             cback = ColorTheme.Background;
                             cfore = defColor;
                             isBold = false;
+                            isItalic = false;
                             isUnderline = false;
                             isReverse = false;
                             break;
-                        case 22: // reverse
+                        case EscapeCodes.Reverse:
                             isReverse = !isReverse;
                             {
                                 var t = cfore;
@@ -147,8 +151,10 @@ namespace GigaIRC.Util
                                 cback = t;
                             }
                             break;
-                        case 31:
-                            //?
+                        case EscapeCodes.Italic:
+                            isItalic = !isItalic;
+                            break;
+                        case EscapeCodes.Underline:
                             isUnderline = !isUnderline;
                             break;
                     }
@@ -162,8 +168,30 @@ namespace GigaIRC.Util
 
             if (word != "")
             {
-                yield return new WordInfo(cback, cfore, isBold, isUnderline, isReverse, word);
+                foreach(var e in FindLinks(cback, cfore, isBold, isItalic, isUnderline, isReverse, word))
+                    yield return e;
             }
+        }
+
+        private static IEnumerable<WordInfo> FindLinks(ColorCode back, ColorCode fore, bool bold, bool italic, bool under, bool rev, string wrd)
+        {
+            var match = FindUrl.Match(wrd);
+            while (match.Success)
+            {
+                var g = match.Groups[0];
+                var idx = g.Index;
+                var len = g.Length;
+                if (idx > 0)
+                {
+                    yield return new WordInfo(back, fore, bold, italic, under, rev, false, wrd.Substring(0, idx));
+                }
+                yield return new WordInfo(back, fore, bold, italic, under, rev, true, g.Value);
+                wrd = wrd.Substring(idx + len);
+                match = FindUrl.Match(wrd);
+            }
+
+            if(wrd.Length > 0)
+                yield return new WordInfo(back, fore, bold, italic, under, rev, false, wrd);
         }
     }
 }

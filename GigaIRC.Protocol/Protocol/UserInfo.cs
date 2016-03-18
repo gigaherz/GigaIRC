@@ -1,11 +1,60 @@
-﻿namespace GigaIRC.Protocol
+﻿using System.ComponentModel;
+using System.Runtime.CompilerServices;
+using GigaIRC.Annotations;
+
+namespace GigaIRC.Protocol
 {
-    public class UserInfo
+    public class UserInfo : INotifyPropertyChanged
     {
-        public string Nickname { get; internal set; }
-        public string Ident { get; internal set; }
-        public string Host { get; internal set; }
-        public string Address { get; internal set; }
+        private string _nickname;
+        private string _ident;
+        private string _host;
+        private string _address;
+
+        public string Nickname
+        {
+            get { return _nickname; }
+            internal set
+            {
+                if (value == _nickname) return;
+                _nickname = value;
+                OnPropertyChanged();
+            }
+        }
+
+        public string Ident
+        {
+            get { return _ident; }
+            internal set
+            {
+                if (value == _ident) return;
+                _ident = value;
+                OnPropertyChanged();
+            }
+        }
+
+        public string Host
+        {
+            get { return _host; }
+            internal set
+            {
+                if (value == _host) return;
+                _host = value;
+                OnPropertyChanged();
+            }
+        }
+
+        public string Address
+        {
+            get { return _address; }
+            internal set
+            {
+                if (value == _address) return;
+                _address = value;
+                OnPropertyChanged();
+            }
+        }
+
         public ChannelCollection SeenIn { get; private set; } = new ChannelCollection();
 
         internal UserInfo()
@@ -65,6 +114,14 @@
         public bool Is(UserInfo u)
         {
             return Is(u.Nickname);
+        }
+
+        public event PropertyChangedEventHandler PropertyChanged;
+
+        [NotifyPropertyChangedInvocator]
+        protected virtual void OnPropertyChanged([CallerMemberName] string propertyName = null)
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
     }
 }

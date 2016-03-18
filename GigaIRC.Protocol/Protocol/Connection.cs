@@ -4,10 +4,7 @@ using System.ComponentModel;
 using System.IO;
 using System.Linq;
 using System.Net;
-using System.Net.Sockets;
 using System.Runtime.CompilerServices;
-using System.Text;
-using System.Threading;
 using System.Threading.Tasks;
 using GigaIRC.Annotations;
 using GigaIRC.Config;
@@ -32,6 +29,7 @@ namespace GigaIRC.Protocol
         public readonly Server Server;
         public readonly Identity Identity;
 
+        private bool _firstNicknameFailed;
         private bool _namesUpdateInProgress;
         private ConnectionState _state;
         private string _network;
@@ -163,12 +161,12 @@ namespace GigaIRC.Protocol
 
         public void SendCTCP(string dest, string ctcpcmd)
         {
-            SendMessage(dest, FormattingCodes.CTCP + CtcpEscape(ctcpcmd) + FormattingCodes.CTCP);
+            SendMessage(dest, EscapeCodes.CTCP + CtcpEscape(ctcpcmd) + EscapeCodes.CTCP);
         }
 
         public void SendCTCPReply(string dest, string ctcpreply)
         {
-            SendNotice(dest, FormattingCodes.CTCP + CtcpEscape(ctcpreply) + FormattingCodes.CTCP);
+            SendNotice(dest, EscapeCodes.CTCP + CtcpEscape(ctcpreply) + EscapeCodes.CTCP);
         }
 
 #if false
@@ -314,7 +312,7 @@ namespace GigaIRC.Protocol
             }
         }
 
-        internal void CommandReceived(Command cmd)
+        internal async Task CommandReceived(Command cmd)
         {
             if (cmd.From.Nickname.Length > 0)
             {
@@ -409,6 +407,20 @@ namespace GigaIRC.Protocol
                     }
                 }
             }
+            else if (cmd.CmdText == "433")
+            {
+                // nick in use
+                if (_firstNicknameFailed)
+                {
+                    // give up
+                    Close();
+                }
+                else
+                {
+                    _firstNicknameFailed = true;
+                    await _connectionSocket.Register(Identity.AltNickname);
+                }
+            }
             else if (cmd.CmdText == "302")
             {
                 //302 bomberbot :bomberbot=+ghzmomhome@83.56.254.177 
@@ -431,6 +443,17 @@ namespace GigaIRC.Protocol
                 //353 nick = chan :names
                 var chan = Channels[cmd.Params[2]];
 
+                if (!_namesUpdateInProgress)
+                {
+                    _namesUpdateInProgress = true;
+                    Session.OnChannelNamesUpdateStart.Invoke(this, new TextEventArgs(chan.Name));
+                    chan.Users.Items.Clear();
+                    foreach (var u in Users)
+                    {
+                        u.SeenIn.Remove(chan.Name);
+                    }
+                }
+
                 var users = cmd.Params[3].Split(' ');
                 foreach (var u in users)
                 {
@@ -451,15 +474,17 @@ namespace GigaIRC.Protocol
 
                     Users.Update(new UserInfo(v));
                     var ui = Users[v];
+                    ui.SeenIn.Add(chan);
 
                     chan.Users.Add(new ChannelUser(this, ui, prefixes));
 
-                    if (!_namesUpdateInProgress)
-                    {
-                        _namesUpdateInProgress = true;
-                        Session.OnChannelNamesUpdateStart.Invoke(this, new TextEventArgs(chan.Name));
-                    }
                     Session.OnChannelNamesUpdateName.Invoke(this, new TargetEventArgs(ui, chan.Name));
+                }
+
+                foreach (var u in Users.ToList())
+                {
+                    if (u.SeenIn == null || u.SeenIn.Count == 0)
+                        Users.Remove(u.Nickname);
                 }
             }
             else if (cmd.CmdText == "366") //NAMES end
@@ -475,15 +500,16 @@ namespace GigaIRC.Protocol
                     ch = new Channel(cmd.Params[0]);
                     Channels.Add(ch);
                 }
-                else //the names list contains the client's own nick so no need to add it explicitly
+                else
                 {
                     ch = Channels[cmd.Params[0]];
 
                     Users.Update(cmd.From);
+                    var user = Users[cmd.From.Nickname];
 
-                    ch.Users.Add(new ChannelUser(this, Users[cmd.From.Nickname], ""));
+                    ch.Users.Add(new ChannelUser(this, user, ""));
 
-                    cmd.From.SeenIn.Add(ch);
+                    user.SeenIn.Add(ch);
                 }
 
                 Session.OnJoin.Invoke(this, new MessageEventArgs(cmd.From, cmd.Params[0], ""));
@@ -491,40 +517,24 @@ namespace GigaIRC.Protocol
             }
             else if (cmd.Is("PART"))
             {
-                if (cmd.From.Is(Me))
-                {
-                    Channels.Remove(cmd.Params[0]);
-                }
-                else
-                {
-                    Channel ch = Channels[cmd.Params[0]];
-                    ch.Users.Remove(cmd.From.Nickname);
-                    cmd.From.SeenIn.Remove(ch.Name);
-                }
+                var who = Users[cmd.From.Nickname];
+                RemoveUserFromChannel(who, cmd.Params[0]);
 
-                var param = (cmd.Params.Count > 1) ? cmd.Params[1] : "";
+                var param = cmd.Params.Count > 1 ? cmd.Params[1] : "";
                 Session.OnPart.Invoke(this, new MessageEventArgs(cmd.From, cmd.Params[0], param));
 
-                if (cmd.From.SeenIn != null && cmd.From.SeenIn.Count == 0)
-                    Users.Remove(cmd.From.Nickname);
+                if (who.SeenIn == null || who.SeenIn.Count == 0)
+                    Users.Remove(who.Nickname);
             }
             else if (cmd.Is("KICK"))
             {
-                if (Me.Is(cmd.Params[1]))
-                {
-                    Channels.Remove(cmd.Params[0]);
-                }
-                else
-                {
-                    Channel ch = Channels[cmd.Params[0]];
-                    ch.Users.Remove(cmd.Params[1]);
-                    cmd.From.SeenIn.Remove(ch.Name);
-                }
+                var who = Users[cmd.Params[1]];
+                RemoveUserFromChannel(who, cmd.Params[0]);
 
                 Session.OnKick.Invoke(this, new KickEventArgs(cmd.From, cmd.Params[0], Users[cmd.Params[1]], cmd.Params[2]));
 
-                if (cmd.From.SeenIn.Count == 0)
-                    Users.Remove(cmd.From.Nickname);
+                if (who.SeenIn == null || who.SeenIn.Count == 0)
+                    Users.Remove(who.Nickname);
             }
             else if (cmd.Is("QUIT"))
             {
@@ -534,13 +544,13 @@ namespace GigaIRC.Protocol
                 }
                 else
                 {
-                    foreach (Channel ch in Channels)
+                    foreach (var ch in Channels)
                     {
                         ch.Users.Remove(cmd.From.Nickname);
                     }
                 }
 
-                var param = (cmd.Params.Count > 0) ? cmd.Params[0] : "";
+                var param = cmd.Params.Count > 0 ? cmd.Params[0] : "";
                 Session.OnQuit.Invoke(this, new MessageEventArgs(cmd.From, "", param));
 
                 Users.Remove(cmd.From.Nickname);
@@ -644,11 +654,19 @@ namespace GigaIRC.Protocol
                 if (cmd.From.Is(Me))
                 {
                     Me.Nickname = cmd.Params[0];
+                    foreach (var ch in Channels)
+                    {
+                        ch.Users.Replace(cmd.Params[0]);
+                    }
                 }
                 else
                 {
-                    UserInfo u = Users[cmd.From.Nickname];
+                    var u = Users[cmd.From.Nickname];
                     u.Nickname = cmd.Params[0];
+                    foreach (var ch in u.SeenIn)
+                    {
+                        ch.Users.Replace(cmd.Params[0]);
+                    }
                 }
                 Session.OnNickChange.Invoke(this, new MessageEventArgs(cmd.From, cmd.Params[0], ""));
             }
@@ -664,6 +682,20 @@ namespace GigaIRC.Protocol
                     u.Nickname = cmd.Params[0];
                 }
                 Session.OnChannelTopic.Invoke(this, new MessageEventArgs(cmd.From, cmd.Params[0], cmd.Params[1]));
+            }
+        }
+
+        private void RemoveUserFromChannel(UserInfo ui, string channel)
+        {
+            if (ui.Is(Me))
+            {
+                Channels.Remove(channel);
+            }
+            else
+            {
+                var ch = Channels[channel];
+                ch.Users.Remove(ui.Nickname);
+                ui.SeenIn.Remove(ch.Name);
             }
         }
 

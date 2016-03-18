@@ -1,5 +1,6 @@
 using System;
 using System.Collections.ObjectModel;
+using System.Collections.Specialized;
 using System.Linq;
 
 namespace GigaIRC.Protocol
@@ -38,6 +39,12 @@ namespace GigaIRC.Protocol
         internal void Add(ChannelUser channelUser)
         {
             Items.Add(channelUser);
+        }
+
+        public void Replace(string nickname)
+        {
+            var info = this[nickname];
+            OnCollectionChanged(new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Replace, info, info));
         }
 
         internal bool TryGetValue(string nickname, out ChannelUser info)

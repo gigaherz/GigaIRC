@@ -79,7 +79,7 @@
     <Compile Include="Events\EventArgs.cs" />
     <Compile Include="Events\EventChain.cs" />
     <Compile Include="Events\FilteringEventChain.cs" />
-    <Compile Include="FormattingCodes.cs" />
+    <Compile Include="EscapeCodes.cs" />
     <Compile Include="Config\Identity.cs" />
     <Compile Include="Util\IniFile.cs" />
     <Compile Include="Logger.cs" />

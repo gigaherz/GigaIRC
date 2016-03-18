@@ -10,6 +10,14 @@
         d:DesignHeight="250" d:DesignWidth="500"
         DesignBackground="{x:Static SystemColors.ControlBrush}"
         Title="FlexList" DataContext="{Binding Mode=OneWay, RelativeSource={RelativeSource Self}}">
+    <dockable:DockableBase.Resources>
+        <DataTemplate x:Key="ChannelUserDataTemplate">
+            <TextBlock Text="{Binding DisplayName}" />
+        </DataTemplate>
+        <DataTemplate x:Key="ChannelDataTemplate">
+            <TextBlock Text="{Binding Name}" />
+        </DataTemplate>
+    </dockable:DockableBase.Resources>
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
@@ -45,7 +53,10 @@
                          IsReadOnly = "True" IsReadOnlyCaretVisible = "False"
                          FontFamily = "Consolas" FontSize = "12.5" />
             <GridSplitter Visibility="{Binding Path=ListboxVisibility}" Grid.Column="1" ResizeBehavior="PreviousAndNext" Width="4" />
-            <ListBox x:Name="ItemsListBox" Width="150" Visibility="{Binding Path=ListboxVisibility}" Grid.Column="2" ItemsSource="{Binding ItemsSource}" />
+            <ListBox x:Name="ItemsListBox" Width="150" Visibility="{Binding Path=ListboxVisibility}" Grid.Column="2"
+                     ItemsSource="{Binding ItemsSource}" ItemTemplateSelector="{Binding ListItemsTemplateSelector}"
+                     MouseDoubleClick="ItemsListBox_OnMouseDoubleClick">
+            </ListBox>
         </Grid>
         <TextBox x:Name="Input" Grid.Row="2" Visibility="{Binding Path=InputVisibility}" PreviewKeyDown="Input_PreviewKeyDown" />
     </Grid>

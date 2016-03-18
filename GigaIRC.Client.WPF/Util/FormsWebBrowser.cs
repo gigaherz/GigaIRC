@@ -18,7 +18,12 @@ namespace GigaIRC.Client.WPF.Util
         readonly System.Windows.Forms.WebBrowser _browser =
             new System.Windows.Forms.WebBrowser();
 
-        public Uri Source => _browser.Url;
+        public Uri Source
+        {
+            get { return _browser.Url; }
+            set { _browser.Url = value; }
+        }
+
         public string DocumentTitle => _browser.DocumentTitle;
 
         public FormsWebBrowser()

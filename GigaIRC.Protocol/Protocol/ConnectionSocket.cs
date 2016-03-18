@@ -5,6 +5,7 @@ using System.Net.Sockets;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using GigaIRC.Config;
 
 namespace GigaIRC.Protocol
 {
@@ -49,9 +50,10 @@ namespace GigaIRC.Protocol
 
                 await SendLine("");
                 await SendLine("CAP LS");
-                await SendLine("USER " + _connection.Identity.Username + " " + _connection.Identity.Username + " * :" + _connection.Identity.FullName);
-                await SendLine("NICK " + _connection.Identity.Nickname);
-                _logger.LogLine(1, "Awaiting reply...");
+                await SendLine("USER " + _connection.Identity.Username + " "
+                    + _connection.Identity.Username + " * :"
+                    + _connection.Identity.FullName);
+                await Register(_connection.Identity.Nickname);
 
                 _connection.ChangeState(ConnectionState.WaitingMOTD);
 
@@ -76,7 +78,7 @@ namespace GigaIRC.Protocol
                     _logger.LogLine(0, "[{0} -->] {1}", _connection.Server, line);
                     var cmd = new Command(line);
 
-                    _connection.CommandReceived(cmd);
+                    await _connection.CommandReceived(cmd);
                 }
 
                 _connection.ChangeState(ConnectionState.Disconnected);
@@ -87,6 +89,12 @@ namespace GigaIRC.Protocol
                 _logger.LogLine(2, "Connection exception: " + e);
                 Close();
             }
+        }
+
+        internal async Task Register(string nickname)
+        {
+            await SendLine("NICK " + _connection.Identity.Nickname);
+            _logger.LogLine(1, "Awaiting reply...");
         }
 
         public async void Close()

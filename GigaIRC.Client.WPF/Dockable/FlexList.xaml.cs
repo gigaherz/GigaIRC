@@ -3,6 +3,7 @@ using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Linq;
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Documents;
 using System.Windows.Input;
 using GigaIRC.Protocol;
@@ -23,7 +24,31 @@ namespace GigaIRC.Client.WPF.Dockable
         private bool _showListbox = true;
         private bool _showInput = true;
         private object _itemsSource;
-        
+
+        public ICommand ListItemDoubleClickCommand { get; set; }
+        public ICommand LinkClickedCommand { get; set; }
+
+        public DataTemplateSelector ListItemsTemplateSelector { get; set; }
+
+        public class DefaultDataTemplateSelector : DataTemplateSelector
+        {
+            readonly FlexList parent;
+
+            public DefaultDataTemplateSelector(FlexList parent)
+            {
+                this.parent = parent;
+            }
+
+            public override DataTemplate SelectTemplate(object item, DependencyObject container)
+            {
+                if (item is ChannelUser)
+                    return (DataTemplate) parent.FindResource("ChannelUserDataTemplate");
+                if (item is Channel)
+                    return (DataTemplate)parent.FindResource("ChannelDataTemplate");
+                return null;
+            }
+        }
+
         public object ItemsSource
         {
             get { return _itemsSource; }
@@ -114,6 +139,7 @@ namespace GigaIRC.Client.WPF.Dockable
         public FlexList()
         {
             _itemsSource = ListItems;
+            ListItemsTemplateSelector = new DefaultDataTemplateSelector(this);
 
             InitializeComponent();
 
@@ -121,6 +147,16 @@ namespace GigaIRC.Client.WPF.Dockable
 
             content = MainContent.Document;
             content.Blocks.Clear();
+
+            MainContent.IsDocumentEnabled = true;
+        }
+
+        private void OnLinkClicked(object obj)
+        {
+            if (LinkClickedCommand != null && LinkClickedCommand.CanExecute(obj))
+            {
+                LinkClickedCommand.Execute(obj);
+            }
         }
 
         // IRCList interface implementation
@@ -141,7 +177,7 @@ namespace GigaIRC.Client.WPF.Dockable
 
             Dispatcher.BeginInvoke(new Action(() =>
             {
-                content.Blocks.Add(LineToParagraphConverter.ToParagraph(line));
+                content.Blocks.Add(LineToParagraphConverter.ToParagraph(line, new RelayCommand(OnLinkClicked)));
 
                 //if(shouldScroll)
                 MainContent.ScrollToEnd();
@@ -160,12 +196,12 @@ namespace GigaIRC.Client.WPF.Dockable
             {
                 if (before == content.Blocks.Count)
                 {
-                    content.Blocks.Add(LineToParagraphConverter.ToParagraph(line));
+                    content.Blocks.Add(LineToParagraphConverter.ToParagraph(line, new RelayCommand(OnLinkClicked)));
                 }
                 else
                 {
                     var after = content.Blocks.ElementAt(before);
-                    content.Blocks.InsertBefore(after, LineToParagraphConverter.ToParagraph(line));
+                    content.Blocks.InsertBefore(after, LineToParagraphConverter.ToParagraph(line, new RelayCommand(OnLinkClicked)));
                 }
             }));
         }
@@ -181,7 +217,7 @@ namespace GigaIRC.Client.WPF.Dockable
             Dispatcher.BeginInvoke(new Action(() =>
             {
                 var at = content.Blocks.ElementAt(number);
-                LineToParagraphConverter.ToParagraph(line, (Paragraph)at);
+                LineToParagraphConverter.ToParagraph(line, new RelayCommand(OnLinkClicked), (Paragraph)at);
             }));
         }
 
@@ -223,6 +259,15 @@ namespace GigaIRC.Client.WPF.Dockable
         {
             var anchorable = AnchorableParent;
             anchorable?.Close();
+        }
+
+        private void ItemsListBox_OnMouseDoubleClick(object sender, MouseButtonEventArgs e)
+        {
+            if (ListItemDoubleClickCommand != null && ListItemDoubleClickCommand.CanExecute(ItemsListBox.SelectedItem))
+            {
+                var data = Tuple.Create(this, ItemsListBox.SelectedItem);
+                ListItemDoubleClickCommand.Execute(data);
+            }
         }
     }
 

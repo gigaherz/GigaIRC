@@ -13,6 +13,8 @@ namespace GigaIRC.Protocol
         private UserInfo _user;
         private string _prefix;
 
+        public string DisplayName => Prefix + User.Nickname;
+
         public UserInfo User
         {
             get { return _user; }
@@ -21,6 +23,7 @@ namespace GigaIRC.Protocol
                 if (Equals(value, _user)) return;
                 _user = value;
                 OnPropertyChanged();
+                OnPropertyChanged(nameof(DisplayName));
             }
         }
 
@@ -32,6 +35,7 @@ namespace GigaIRC.Protocol
                 if (value == _prefix) return;
                 _prefix = value;
                 OnPropertyChanged();
+                OnPropertyChanged(nameof(DisplayName));
             }
         }
 
@@ -40,6 +44,14 @@ namespace GigaIRC.Protocol
             _connection = connection;
             User = user;
             Prefix = prefix;
+            user.PropertyChanged += (sender, args) =>
+            {
+                if (args.PropertyName == nameof(user.Nickname))
+                {
+                    OnPropertyChanged(nameof(User));
+                    OnPropertyChanged(nameof(DisplayName));
+                }
+            };
         }
 
         int IComparable.CompareTo(object obj)
@@ -65,7 +77,7 @@ namespace GigaIRC.Protocol
 
         public override string ToString()
         {
-            return Prefix + User.Nickname;
+            return DisplayName;
         }
 
         public event PropertyChangedEventHandler PropertyChanged;

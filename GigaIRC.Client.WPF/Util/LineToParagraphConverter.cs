@@ -3,16 +3,14 @@ using System.Globalization;
 using System.Windows;
 using System.Windows.Data;
 using System.Windows.Documents;
+using System.Windows.Input;
+using GigaIRC.Client.WPF;
 
 namespace GigaIRC.Util
 {
-    public class LineToParagraphConverter : IValueConverter
+    public class LineToParagraphConverter
     {
-        public static LineToParagraphConverter Instance { get; } = new LineToParagraphConverter();
-
-        private LineToParagraphConverter() { }
-
-        public static Paragraph ToParagraph(LineInfo line, Paragraph tb = null)
+        public static Paragraph ToParagraph(LineInfo line, ICommand linkClickCommand, Paragraph tb = null)
         {
             if (tb == null) tb = new Paragraph
             {
@@ -30,9 +28,10 @@ namespace GigaIRC.Util
             foreach (var word in words)
             {
                 var span = new Run();
-
+                
                 if (word.IsBold) span.FontWeight = FontWeights.Bold;
                 if (word.IsUnderline) span.TextDecorations = TextDecorations.Underline;
+                if (word.IsItalic) span.FontStyle = FontStyles.Italic;
 
                 if (word.IsReverse ||
                     word.ForeColor != line.Color ||
@@ -46,23 +45,39 @@ namespace GigaIRC.Util
 
                 span.Text = t;
 
-                tb.Inlines.Add(span);
+                if (word.IsLink)
+                {
+                    Uri uri;
+
+                    if (word.Word.Contains(":/"))
+                        uri = new Uri(word.Word);
+                    else if(word.Word.StartsWith("ftp."))
+                        uri = new Uri("ftp://" + word.Word);
+                    else
+                        uri = new Uri("http://" + word.Word);
+
+                    var link = new Hyperlink
+                    {
+                        NavigateUri = uri
+                    };
+                    link.RequestNavigate += (sender, args) =>
+                    {
+                        if (linkClickCommand != null && linkClickCommand.CanExecute(args.Uri))
+                        {
+                            linkClickCommand.Execute(args.Uri);
+                            args.Handled = true;
+                        }
+                    };
+                    link.Inlines.Add(span);
+                    tb.Inlines.Add(link);
+                }
+                else
+                {
+                    tb.Inlines.Add(span);
+                }
             }
 
             return tb;
-        }
-
-        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
-        {
-            var line = value as LineInfo;
-            if (line == null)
-                return value.ToString();
-            return ToParagraph(line);
-        }
-
-        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
-        {
-            throw new NotImplementedException();
         }
     }
 }

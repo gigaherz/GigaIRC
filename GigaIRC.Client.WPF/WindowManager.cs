@@ -26,7 +26,7 @@ namespace GigaIRC.Client.WPF
                     var conn = new WindowCollection(data);
                     Connections.Add(window.Connection, conn);
                     conn.Add(window);
-                    Data.Items.Add(window);
+                    Data.Items.Add(data);
                     break;
                 case PanelType.Other:
                     OtherWindows.Add(window);
@@ -46,9 +46,11 @@ namespace GigaIRC.Client.WPF
             switch (window.PanelType)
             {
                 case PanelType.Status:
-                    var data = Connections[window.Connection].Data;
+                    WindowCollection data;
+                    Connections.TryGetValue(window.Connection, out data);
                     Connections.Remove(window.Connection);
-                    Data.Items.Remove(data);
+                    if(data != null)
+                        Data.Items.Remove(data.Data);
                     break;
                 case PanelType.Other:
                     OtherWindows.Remove(window);

@@ -36,6 +36,7 @@ namespace GigaIRC.Client.WPF
             InitializeComponent();
 
             ShowDebug();
+            ShowTreeList();
 
             Session.Settings.LoadFromFile(@"settings.cfg");
 

@@ -2,7 +2,6 @@
 using System.Windows;
 using System.Windows.Controls;
 using GigaIRC.Client.WPF.Tree;
-using GigaIRC.Protocol;
 
 namespace GigaIRC.Client.WPF.Dockable
 {

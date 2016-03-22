@@ -5,7 +5,7 @@
                        xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
                        xmlns:dockable="clr-namespace:GigaIRC.Client.WPF.Dockable"
                        xmlns:tree="clr-namespace:GigaIRC.Client.WPF.Tree"
-                       mc:Ignorable="d" d:DesignHeight="300" d:DesignWidth="300"
+                       mc:Ignorable="d" d:DesignHeight="200" d:DesignWidth="200"
                        DataContext="{Binding RelativeSource={RelativeSource Self}}">
     <dockable:DockableBase.Resources>
         <HierarchicalDataTemplate  x:Key="SessionDataTemplate" DataType="{x:Type tree:SessionData}" ItemsSource="{Binding Items}">

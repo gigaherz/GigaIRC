@@ -1,4 +1,4 @@
-﻿namespace GigaIRC
+﻿namespace GigaIRC.Util
 {
     public class EscapeCodes
     {

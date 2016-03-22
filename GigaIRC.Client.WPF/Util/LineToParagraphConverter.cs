@@ -1,12 +1,9 @@
-﻿using System;
-using System.Globalization;
-using System.Windows;
-using System.Windows.Data;
+﻿using System.Windows;
 using System.Windows.Documents;
 using System.Windows.Input;
-using GigaIRC.Client.WPF;
+using GigaIRC.Util;
 
-namespace GigaIRC.Util
+namespace GigaIRC.Client.WPF.Util
 {
     public class LineToParagraphConverter
     {
@@ -41,32 +38,15 @@ namespace GigaIRC.Util
                     span.Background = ColorTheme.Brush(word.BackColor);
                 }
 
-                string t = word.Word;
+                string text = word.Word;
 
-                span.Text = t;
+                span.Text = text;
 
-                if (word.IsLink)
+                if (word.Link != null)
                 {
-                    Uri uri;
-
-                    if (word.Word.Contains(":/"))
-                        uri = new Uri(word.Word);
-                    else if(word.Word.StartsWith("ftp."))
-                        uri = new Uri("ftp://" + word.Word);
-                    else
-                        uri = new Uri("http://" + word.Word);
-
                     var link = new Hyperlink
                     {
-                        NavigateUri = uri
-                    };
-                    link.RequestNavigate += (sender, args) =>
-                    {
-                        if (linkClickCommand != null && linkClickCommand.CanExecute(args.Uri))
-                        {
-                            linkClickCommand.Execute(args.Uri);
-                            args.Handled = true;
-                        }
+                        NavigateUri = word.Link, Command = linkClickCommand, CommandParameter = word.Link
                     };
                     link.Inlines.Add(span);
                     tb.Inlines.Add(link);

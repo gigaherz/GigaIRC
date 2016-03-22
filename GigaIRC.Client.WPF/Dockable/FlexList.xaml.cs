@@ -6,6 +6,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Documents;
 using System.Windows.Input;
+using GigaIRC.Client.WPF.Util;
 using GigaIRC.Protocol;
 using GigaIRC.Util;
 
@@ -16,7 +17,7 @@ namespace GigaIRC.Client.WPF.Dockable
         public readonly ObservableCollection<LineInfo> Lines = new ObservableCollection<LineInfo>();
         public ObservableCollection<object> ListItems { get; } = new ObservableCollection<object>();
 
-        readonly FlowDocument content;
+        private readonly FlowDocument _content;
         private string _topicText;
         private string _topicInfo;
         private bool _listSorted;
@@ -24,6 +25,7 @@ namespace GigaIRC.Client.WPF.Dockable
         private bool _showListbox = true;
         private bool _showInput = true;
         private object _itemsSource;
+        private PanelType _panelType = PanelType.Other;
 
         public ICommand ListItemDoubleClickCommand { get; set; }
         public ICommand LinkClickedCommand { get; set; }
@@ -32,20 +34,31 @@ namespace GigaIRC.Client.WPF.Dockable
 
         public class DefaultDataTemplateSelector : DataTemplateSelector
         {
-            readonly FlexList parent;
+            private readonly FlexList _parent;
 
             public DefaultDataTemplateSelector(FlexList parent)
             {
-                this.parent = parent;
+                _parent = parent;
             }
 
             public override DataTemplate SelectTemplate(object item, DependencyObject container)
             {
                 if (item is ChannelUser)
-                    return (DataTemplate) parent.FindResource("ChannelUserDataTemplate");
+                    return (DataTemplate)_parent.FindResource("ChannelUserDataTemplate");
                 if (item is Channel)
-                    return (DataTemplate)parent.FindResource("ChannelDataTemplate");
+                    return (DataTemplate)_parent.FindResource("ChannelDataTemplate");
                 return null;
+            }
+        }
+
+        public PanelType PanelType
+        {
+            get { return _panelType; }
+            set
+            {
+                if (value == _panelType) return;
+                _panelType = value;
+                OnPropertyChanged();
             }
         }
 
@@ -145,8 +158,8 @@ namespace GigaIRC.Client.WPF.Dockable
 
             ItemsListBox.Items.SortDescriptions.Add(new SortDescription("", ListSortDirection.Ascending));
 
-            content = MainContent.Document;
-            content.Blocks.Clear();
+            _content = MainContent.Document;
+            _content.Blocks.Clear();
 
             MainContent.IsDocumentEnabled = true;
         }
@@ -164,12 +177,12 @@ namespace GigaIRC.Client.WPF.Dockable
         {
             Lines.Clear();
 
-            content?.Blocks.Clear();
+            _content?.Blocks.Clear();
         }
 
         public void AddLine(int color, string text)
         {
-            if (content == null)
+            if (_content == null)
                 return;
 
             var line = new LineInfo((ColorCode)color, text);
@@ -177,7 +190,7 @@ namespace GigaIRC.Client.WPF.Dockable
 
             Dispatcher.BeginInvoke(new Action(() =>
             {
-                content.Blocks.Add(LineToParagraphConverter.ToParagraph(line, new RelayCommand(OnLinkClicked)));
+                _content.Blocks.Add(LineToParagraphConverter.ToParagraph(line, new RelayCommand(OnLinkClicked)));
 
                 //if(shouldScroll)
                 MainContent.ScrollToEnd();
@@ -186,7 +199,7 @@ namespace GigaIRC.Client.WPF.Dockable
 
         public void AddLine(int before, int color, string text)
         {
-            if (content == null)
+            if (_content == null)
                 return;
 
             var line = new LineInfo((ColorCode)color, text);
@@ -194,21 +207,21 @@ namespace GigaIRC.Client.WPF.Dockable
 
             Dispatcher.BeginInvoke(new Action(() =>
             {
-                if (before == content.Blocks.Count)
+                if (before == _content.Blocks.Count)
                 {
-                    content.Blocks.Add(LineToParagraphConverter.ToParagraph(line, new RelayCommand(OnLinkClicked)));
+                    _content.Blocks.Add(LineToParagraphConverter.ToParagraph(line, new RelayCommand(OnLinkClicked)));
                 }
                 else
                 {
-                    var after = content.Blocks.ElementAt(before);
-                    content.Blocks.InsertBefore(after, LineToParagraphConverter.ToParagraph(line, new RelayCommand(OnLinkClicked)));
+                    var after = _content.Blocks.ElementAt(before);
+                    _content.Blocks.InsertBefore(after, LineToParagraphConverter.ToParagraph(line, new RelayCommand(OnLinkClicked)));
                 }
             }));
         }
 
         public void SetLine(int number, int color, string text)
         {
-            if (content == null)
+            if (_content == null)
                 return;
 
             var line = new LineInfo((ColorCode)color, text);
@@ -216,7 +229,7 @@ namespace GigaIRC.Client.WPF.Dockable
 
             Dispatcher.BeginInvoke(new Action(() =>
             {
-                var at = content.Blocks.ElementAt(number);
+                var at = _content.Blocks.ElementAt(number);
                 LineToParagraphConverter.ToParagraph(line, new RelayCommand(OnLinkClicked), (Paragraph)at);
             }));
         }
@@ -227,7 +240,7 @@ namespace GigaIRC.Client.WPF.Dockable
 
             Dispatcher.BeginInvoke(new Action(() =>
             {
-                content.Blocks.Remove(content.Blocks.ElementAt(number));
+                _content.Blocks.Remove(_content.Blocks.ElementAt(number));
             }));
         }
 
@@ -246,7 +259,7 @@ namespace GigaIRC.Client.WPF.Dockable
             return Lines.Count;
         }
 
-        private void Input_PreviewKeyDown(object sender, System.Windows.Input.KeyEventArgs e)
+        private void Input_PreviewKeyDown(object sender, KeyEventArgs e)
         {
             if (e.Key == Key.Return || e.Key == Key.Enter)
             {

@@ -1,16 +1,16 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.ComponentModel;
 using System.Linq;
 using System.Threading;
+using System.Windows;
 using GigaIRC.Client.WPF.Dialogs;
 using GigaIRC.Client.WPF.Dockable;
+using GigaIRC.Client.WPF.Tree;
 using GigaIRC.Client.WPF.Util;
 using GigaIRC.Config;
 using GigaIRC.Events;
 using GigaIRC.Protocol;
-using GigaIRC.Util;
 using Xceed.Wpf.AvalonDock.Layout;
 using WebBrowser = GigaIRC.Client.WPF.Dockable.WebBrowser;
 
@@ -18,29 +18,16 @@ namespace GigaIRC.Client.WPF
 {
     public partial class MainWindow
     {
-        LayoutAnchorable _preferencesPane;
-        LayoutAnchorable _debugPane;
+        private LayoutAnchorable _preferencesPane;
+        private LayoutAnchorable _treeList;
+        private LayoutAnchorablePane _sidePaneLeft;
+        private LayoutAnchorablePane _sidePaneRight;
 
         public static MainWindow Instance { get; private set; }
 
         public Session Session { get; } = new Session();
 
-        private readonly Dictionary<Connection, Dictionary<string, FlexList>> _connectionWindows = new Dictionary<Connection, Dictionary<string, FlexList>>();
-        private readonly Dictionary<string, FlexList> _specialWindows = new Dictionary<string, FlexList>();
-
-        public FlexList this[Connection cn, string wndName]
-        {
-            get
-            {
-                var dict = cn == null ? _specialWindows : _connectionWindows[cn];
-                return dict[wndName];
-            }
-            private set
-            {
-                var dict = cn == null ? _specialWindows : _connectionWindows[cn];
-                dict[wndName] = value;
-            }
-        }
+        private readonly WindowManager _windows = new WindowManager();
 
         public MainWindow()
         {
@@ -54,7 +41,7 @@ namespace GigaIRC.Client.WPF
 
             AttachEvents();
 
-            this[null, "@@debug@@"].AddLine(0, "Program Initialization Finished.");
+            _windows["@@debug@@"].AddLine(0, "Program Initialization Finished.");
         }
 
         private void Window_Closing(object sender, CancelEventArgs e)
@@ -63,7 +50,12 @@ namespace GigaIRC.Client.WPF
                 conn.Close();
         }
 
-        LayoutAnchorable AttachDockable(DockableBase p)
+        private void LinkClicked(object obj)
+        {
+            NewBrowser(obj as Uri);
+        }
+
+        private LayoutAnchorable AttachDockable(DockableBase p)
         {
             var anchorable = new LayoutAnchorable
             {
@@ -87,8 +79,52 @@ namespace GigaIRC.Client.WPF
             return anchorable;
         }
 
+        private LayoutAnchorable AttachDockableSide(DockableBase p, bool right)
+        {
+            var anchorable = new LayoutAnchorable
+            {
+                Content = p,
+                Title = p.Title
+            };
+
+            p.AnchorableParent = anchorable;
+
+            p.PropertyChanged += (sender, args) =>
+            {
+                if (args.PropertyName == "Title")
+                    p.AnchorableParent.Title = p.Title;
+            };
+
+            anchorable.Closed += (sender, args) => p.OnClosed();
+            anchorable.Closing += (sender, args) => args.Cancel = p.OnClosing();
+
+            LayoutAnchorablePane pane;
+            if (right)
+            {
+                if (_sidePaneRight == null)
+                {
+                    _sidePaneRight = new LayoutAnchorablePane { DockWidth = new GridLength(200) };
+                    MasterPanel.Children.Add(_sidePaneRight);
+                }
+                pane = _sidePaneRight;
+            }
+            else
+            {
+                if (_sidePaneLeft == null)
+                {
+                    _sidePaneLeft = new LayoutAnchorablePane { DockWidth = new GridLength(200) };
+                    MasterPanel.Children.Insert(0, _sidePaneLeft);
+                }
+                pane = _sidePaneLeft;
+            }
+
+            pane.Children.Add(anchorable);
+
+            return anchorable;
+        }
+
         public RelayCommand OpenPreferencesCommand => new RelayCommand(_ => OpenPreferences());
-        void OpenPreferences()
+        private void OpenPreferences()
         {
             if (_preferencesPane == null)
             {
@@ -101,24 +137,35 @@ namespace GigaIRC.Client.WPF
         }
 
         public RelayCommand ShowDebugCommand => new RelayCommand(_ => ShowDebug());
-        void ShowDebug()
+        private void ShowDebug()
         {
-            if (_debugPane == null)
+            FlexList wnd;
+            if (!_windows.TryGetWindow("@@debug@@", out wnd))
             {
-                var debugPanel = new FlexList { ShowTopic = false, ShowListbox = false, Title="Debug" };
-                _debugPane = AttachDockable(debugPanel);
+                var debugPanel = CreateWindow("@@debug@@", "Debug", PanelType.Other);
+                debugPanel.ShowTopic = false;
+                debugPanel.ShowListbox = false;
                 debugPanel.LinkClickedCommand = new RelayCommand(LinkClicked);
-
                 debugPanel.OnInput += (sender, args) => debugPanel.AddLine((int)ColorTheme.Default, args.Text);
-                _debugPane.Closed += (sender, args) => _debugPane = null;
-
-                _specialWindows["@@debug@@"] = debugPanel;
             }
-            DockingManager.ActiveContent = _debugPane;
+            DockingManager.ActiveContent = wnd;
+        }
+
+        public RelayCommand ShowTreeListCommand => new RelayCommand(_ => ShowTreeList());
+        private void ShowTreeList()
+        {
+            if (_treeList == null)
+            {
+                var treeList = new SessionTree();
+                _treeList = AttachDockableSide(treeList, false);
+                _treeList.Closed += (sender, args) => _treeList = null;
+                treeList.Root = _windows.Data;
+            }
+            DockingManager.ActiveContent = _treeList;
         }
 
         public RelayCommand NewBrowserCommand => new RelayCommand(_ => NewBrowser());
-        void NewBrowser(Uri url = null)
+        private void NewBrowser(Uri url = null)
         {
             var browser = new WebBrowser();
             var pane = AttachDockable(browser);
@@ -130,7 +177,7 @@ namespace GigaIRC.Client.WPF
         }
 
         public RelayCommand NewConnectionCommand => new RelayCommand(_ => NewConnection());
-        void NewConnection()
+        private void NewConnection()
         {
             var wnd = new QuickConnect {Owner = this};
             if (wnd.ShowDialog() == true)
@@ -156,50 +203,31 @@ namespace GigaIRC.Client.WPF
         }
 
         #region Window Management
-        private FlexList CreateWindow(Connection cn, string id, string title)
+        private FlexList CreateWindow(string id, string title, PanelType panelType)
         {
-            var panel = new FlexList { Connection = cn, WindowId = id };
+            return CreateWindow(null, id, title, panelType);
+        }
+
+        private FlexList CreateWindow(Connection cn, string id, string title, PanelType panelType)
+        {
+            var panel = new FlexList { Connection = cn, WindowId = id, PanelType = panelType };
             panel.OnInput += Window_OnInput;
 
             panel.LinkClickedCommand = new RelayCommand(LinkClicked);
 
             AttachDockable(panel);
 
-            this[cn, id] = panel;
+            _windows.Add(panel);
 
             panel.Title = title;
-            panel.Closed += (sender, args) => RemoveWindow(panel.Connection, panel.WindowId);
+            panel.Closed += (sender, args) => _windows.Remove(panel);
 
             return panel;
         }
 
-        private void LinkClicked(object obj)
-        {
-            NewBrowser(obj as Uri);
-        }
-
-        private void RemoveWindow(Connection cn, string id)
-        {
-            var dict = cn == null ? _specialWindows : _connectionWindows[cn];
-            dict.Remove(id);
-        }
-
-        private bool ContainsWindow(Connection cn, string id)
-        {
-            var dict = cn == null ? _specialWindows : _connectionWindows[cn];
-            return dict.ContainsKey(id);
-        }
-
-        private bool TryGetWindow(Connection cn, string id, out FlexList window)
-        {
-            var dict = cn == null ? _specialWindows : _connectionWindows[cn];
-            return dict.TryGetValue(id, out window);
-        }
         #endregion
 
-
         #region Input Handler
-
         private void Window_OnInput(object sender, TextInputEventArgs e)
         {
             var d = (FlexList)sender;
@@ -215,49 +243,48 @@ namespace GigaIRC.Client.WPF
                 if (string.Compare(cmd[0], "me", StringComparison.OrdinalIgnoreCase) == 0)
                 {
                     e.Text = e.Text.Substring(4);
-                    if (windowId == "@@status@@")
+
+                    switch (d.PanelType)
                     {
-                        d.AddLine(0, " * ERROR: Cannot send to window. Use /command to send a command to the server.");
-                    }
-                    else
-                    {
-                        if (windowId[0] == '#')
-                        {
+                        case PanelType.Channel:
                             Connection_OnChannelAction(connection, new MessageEventArgs(connection.Me, windowId, e.Text));
-                        }
-                        else
-                        {
+                            connection.SendCTCP(windowId, "ACTION " + e.Text);
+                            break;
+                        case PanelType.Query:
                             Connection_OnPrivateAction(connection, new MessageEventArgs(connection.Me, windowId, e.Text));
-                        }
-                        connection.SendCTCP(windowId, "ACTION " + e.Text);
+                            connection.SendCTCP(windowId, "ACTION " + e.Text);
+                            break;
+                        default:
+                            d.AddLine(0, " * ERROR: Cannot send to window. Use /command to send a command to the server.");
+                            break;
                     }
                 }
                 else
                 {
-                    connection?.SendLine(t);
+                    if(cmd.Length > 1)
+                        connection?.SendLine(cmd[0] + " :" + string.Join(" ", cmd.Skip(1)));
+                    else
+                        connection?.SendLine(cmd[0]);
                 }
             }
             else
             {
-                if (windowId.StartsWith("@@"))
+                switch (d.PanelType)
                 {
-                    d.AddLine(0, " * ERROR: Cannot send to window. Use /command to send a command to the server.");
-                }
-                else
-                {
-                    if (connection.PreChars.Contains(windowId[0]))
-                    {
+                    case PanelType.Channel:
                         Connection_OnChannelMessage(connection, new MessageEventArgs(connection.Me, windowId, e.Text));
-                    }
-                    else
-                    {
+                        connection.SendMessage(windowId, e.Text);
+                        break;
+                    case PanelType.Query:
                         Connection_OnPrivateMessage(connection, new MessageEventArgs(connection.Me, windowId, e.Text));
-                    }
-                    connection.SendMessage(windowId, e.Text);
+                        connection.SendMessage(windowId, e.Text);
+                        break;
+                    default:
+                        d.AddLine(0, " * ERROR: Cannot send to window. Use /command to send a command to the server.");
+                        break;
                 }
             }
         }
-
         #endregion
 
         public void AttachEvents()
@@ -301,7 +328,7 @@ namespace GigaIRC.Client.WPF
 
         #region Recall With Invoke
         internal bool InvokeRequired => Dispatcher.Thread != Thread.CurrentThread;
-        
+
         private bool RecallWithInvoke<T1, T2>(Func<T1, T2, bool> d, T1 c, T2 e)
         {
             try
@@ -345,7 +372,6 @@ namespace GigaIRC.Client.WPF
         #endregion
 
         #region IRC Events
-        
         private void Channel_Closing(object sender, CancelEventArgs e)
         {
             var window = (FlexList)sender;
@@ -357,14 +383,15 @@ namespace GigaIRC.Client.WPF
 
         private bool Debug_OnLog(Connection c, LogEventArgs e)
         {
-            if (!_specialWindows.ContainsKey("@@debug@@"))
+            if (!_windows.Contains("@@debug@@"))
                 return true;
 
-            var dbg = _specialWindows["@@debug@@"];
+            var dbg = _windows["@@debug@@"];
             dbg.AddLine((int)ColorTheme.Default, e.Text);
 
             return true;
         }
+
         private void Connections_CollectionChanged(object sender, NotifyCollectionChangedEventArgs e)
         {
             if (e.NewItems != null)
@@ -385,25 +412,40 @@ namespace GigaIRC.Client.WPF
             var conn = (Connection)sender;
             if (e.PropertyName == nameof(conn.State))
             {
+                FlexList window;
                 switch (conn.State)
                 {
                     case ConnectionState.Connecting:
-                        _connectionWindows[conn] = new Dictionary<string, FlexList>();
-
-                        var window = CreateWindow(conn, "@@status@@",
-                            $"Status [{conn.Server}:{conn.Port}]");
+                        window = CreateWindow(conn, "@@status@@",
+                            $"Status {conn.Network} [{conn.Address}:{conn.Port}]",
+                            PanelType.Status);
                         window.ShowTopic = false;
                         window.AddLine(0, "Connecting...");
-                        window.Closed += (s, a) => window.Connection.Close();
+                        window.Closed += (s, a) =>
+                        {
+                            _windows.Remove(window);
+                            window.Connection.Close();
+                        };
                         window.ItemsSource = conn.Channels;
                         window.ListItemDoubleClickCommand = new RelayCommand(ConnectionListItem_DoubleClick);
                         break;
                     case ConnectionState.Connected:
-                        //connection.SendLine("JOIN #asdftest");
+                        window = _windows[conn, "@@status@@"];
+                        window.AddLine(0, "Connection completed.");
+                        // TODO: Autojoin
                         break;
                     case ConnectionState.Disconnected:
-                        // TODO
+                        window = _windows[conn, "@@status@@"];
+                        window.AddLine(0, "Disconnected.");
                         break;
+                }
+            }
+            else
+            {
+                var window = _windows[conn, "@@status@@"];
+                if (window != null)
+                {
+                    window.Title = $"Status {conn.Network} [{conn.Address}:{conn.Port}]";
                 }
             }
         }
@@ -418,13 +460,13 @@ namespace GigaIRC.Client.WPF
             string target = e.Parameters[1];
             string text = e.Parameters[2];
 
-            if (!ContainsWindow(connection, target))
+            if (!_windows.Contains(connection, target))
             {
                 ProcessChannelJoin(connection, new MessageEventArgs(null, target, ""));
             }
 
-            this[connection, target].TopicText = text;
-            this[connection, target].AddLine(12, $" * Topic is '{text}'.");
+            _windows[connection, target].TopicText = text;
+            _windows[connection, target].AddLine(12, $" * Topic is '{text}'.");
 
             return true;
         }
@@ -440,14 +482,14 @@ namespace GigaIRC.Client.WPF
             string text = e.Text;
             var from = connection.Channels[target].GetDecoratedName(e.From);
 
-            if (!ContainsWindow(connection, target))
+            if (!_windows.Contains(connection, target))
             {
                 ProcessChannelJoin(connection, new MessageEventArgs(null, target, ""));
             }
 
-            this[connection, target].TopicText = text;
-            this[connection, target].TopicInfo = $" * Topic set by {@from} on {DateTime.Now}.";
-            this[connection, target].AddLine(12, Tools.TimeStamp(" * {0} changed Topic to '{1}'.", from, text));
+            _windows[connection, target].TopicText = text;
+            _windows[connection, target].TopicInfo = $" * Topic set by {@from} on {DateTime.Now}.";
+            _windows[connection, target].AddLine(12, TimeStamp.Format(" * {0} changed Topic to '{1}'.", from, text));
 
             return true;
         }
@@ -463,7 +505,7 @@ namespace GigaIRC.Client.WPF
             var setBy = e.Parameters[2];
             var setDate = e.Parameters[3];
 
-            if (!ContainsWindow(connection, target))
+            if (!_windows.Contains(connection, target))
             {
                 ProcessChannelJoin(connection, new MessageEventArgs(null, target, ""));
             }
@@ -472,8 +514,8 @@ namespace GigaIRC.Client.WPF
 
             var ln = $" * Topic set by {setBy} on {date}.";
 
-            this[connection, target].TopicInfo = ln;
-            this[connection, target].AddLine(12, ln);
+            _windows[connection, target].TopicInfo = ln;
+            _windows[connection, target].AddLine(12, ln);
 
             return true;
         }
@@ -485,9 +527,9 @@ namespace GigaIRC.Client.WPF
                 return RecallWithInvoke(Connection_OnChannelModes, connection, e);
             }
 
-            var t = Tools.TimeStamp(" * {0} changed modes: {1}", connection.Channels[e.Target].GetDecoratedName(e.From), e.Text);
+            var t = TimeStamp.Format(" * {0} changed modes: {1}", connection.Channels[e.Target].GetDecoratedName(e.From), e.Text);
 
-            this[connection, e.Target].AddLine(7, (t));
+            _windows[connection, e.Target].AddLine(7, (t));
 
             return true;
         }
@@ -499,14 +541,14 @@ namespace GigaIRC.Client.WPF
                 return RecallWithInvoke(Connection_OnJoin, connection, e);
             }
 
-            if (!ContainsWindow(connection, e.Target))
+            if (!_windows.Contains(connection, e.Target))
             {
                 ProcessChannelJoin(connection, e);
             }
 
             if (e.From.Nickname != connection.Me.Nickname)
             {
-                this[connection, e.Target].AddLine(9, Tools.TimeStamp(" *{0} joined the channel.", e.From));
+                _windows[connection, e.Target].AddLine(9, TimeStamp.Format(" *{0} joined the channel.", e.From));
             }
 
             return false;
@@ -525,17 +567,17 @@ namespace GigaIRC.Client.WPF
             }
             else
             {
-                if (!ContainsWindow(connection, e.Target))
+                if (!_windows.Contains(connection, e.Target))
                 {
                     ProcessChannelJoin(connection, e);
                 }
 
-                string msg = Tools.TimeStamp(
+                string msg = TimeStamp.Format(
                     string.IsNullOrEmpty(e.Text)
                         ? " * {0} left the channel"
                         : " * {0} left the channel ({1})", e.From, e.Text);
 
-                this[connection, e.Target].AddLine(10, msg);
+                _windows[connection, e.Target].AddLine(10, msg);
             }
             return false;
         }
@@ -553,12 +595,12 @@ namespace GigaIRC.Client.WPF
             }
             else
             {
-                if (!ContainsWindow(connection, e.Target))
+                if (!_windows.Contains(connection, e.Target))
                 {
                     ProcessChannelJoin(connection, e);
                 }
 
-                var msg = Tools.TimeStamp(
+                var msg = TimeStamp.Format(
                     (e.Text.Length > 0)
                         ? " * {0} kicked {1} from the channel ({2})"
                         : " * {0} kicked {1} from the channel",
@@ -566,7 +608,7 @@ namespace GigaIRC.Client.WPF
                     e.Who,
                     e.Text);
 
-                this[connection, e.Target].AddLine(10, msg);
+                _windows[connection, e.Target].AddLine(10, msg);
             }
 
             return false;
@@ -580,20 +622,20 @@ namespace GigaIRC.Client.WPF
                 return RecallWithInvoke(Connection_OnQuit, connection, e);
             }
 
-            var msg = Tools.TimeStamp(" * {0} quit IRC ({1})", e.From.Nickname, e.Text);
+            var msg = TimeStamp.Format(" * {0} quit IRC ({1})", e.From.Nickname, e.Text);
 
-            if (ContainsWindow(connection, e.From.Nickname))
+            if (_windows.Contains(connection, e.From.Nickname))
             {
-                this[connection, e.From.Nickname].AddLine(4, msg);
+                _windows[connection, e.From.Nickname].AddLine(4, msg);
             }
 
-            foreach (Channel ch in connection.Channels)
+            foreach (var ch in connection.Channels)
             {
                 //e.From = ch.Users[e.From].User.Nickname;
-                if (!ContainsWindow(connection, ch.Name))
+                if (!_windows.Contains(connection, ch.Name))
                     continue;
 
-                this[connection, ch.Name].AddLine(4, msg);
+                _windows[connection, ch.Name].AddLine(4, msg);
             }
             return false;
         }
@@ -605,30 +647,28 @@ namespace GigaIRC.Client.WPF
                 return RecallWithInvoke(Connection_OnNickChange, connection, e);
             }
 
-            var msg = Tools.TimeStamp(" * {0} changed nick to {1}", e.From.Nickname, e.Target);
+            var msg = TimeStamp.Format(" * {0} changed nick to {1}", e.From.Nickname, e.Target);
 
-            if (ContainsWindow(connection, e.From.Nickname))
+            if (_windows.Contains(connection, e.From.Nickname))
             {
-                var d = this[connection, e.From.Nickname];
-                RemoveWindow(connection, e.From.Nickname);
+                var d = _windows[connection, e.From.Nickname];
+                _windows.Remove(d);
                 d.Title = e.Target;
-                _connectionWindows[connection].Add(e.Target, d);
-                this[connection, e.Target].AddLine(7, msg);
+                _windows.Add(d);
+                _windows[connection, e.Target].AddLine(7, msg);
             }
 
             foreach (var ch in connection.Channels)
             {
-                if (!ch.Users.Contains(e.Target) || !ContainsWindow(connection, ch.Name))
+                if (!ch.Users.Contains(e.Target) || !_windows.Contains(connection, ch.Name))
                     continue;
 
-                var msg2 = Tools.TimeStamp(" * {0} changed nick to {1}", ch.GetDecoratedName(e.From), e.Target);
+                var msg2 = TimeStamp.Format(" * {0} changed nick to {1}", ch.GetDecoratedName(e.From), e.Target);
 
-                this[connection, ch.Name].AddLine(7, msg2);
+                _windows[connection, ch.Name].AddLine(7, msg2);
             }
             return false;
         }
-
-
 
         private bool Connection_OnChannelMessage(Connection connection, MessageEventArgs e)
         {
@@ -637,16 +677,16 @@ namespace GigaIRC.Client.WPF
                 return RecallWithInvoke(Connection_OnChannelMessage, connection, e);
             }
 
-            if (!ContainsWindow(connection, e.Target))
+            if (!_windows.Contains(connection, e.Target))
             {
                 ProcessChannelJoin(connection, e);
             }
 
-            var msg = Tools.TimeStamp("({0}): {1}",
+            var msg = TimeStamp.Format("({0}): {1}",
                                       connection.Channels[e.Target].GetDecoratedName(e.From),
                                       e.Text);
 
-            this[connection, e.Target].AddLine(15, msg);
+            _windows[connection, e.Target].AddLine(15, msg);
             return false;
         }
 
@@ -657,16 +697,16 @@ namespace GigaIRC.Client.WPF
                 return RecallWithInvoke(Connection_OnChannelNotice, connection, e);
             }
 
-            if (!ContainsWindow(connection, e.Target))
+            if (!_windows.Contains(connection, e.Target))
             {
                 ProcessChannelJoin(connection, e);
             }
 
-            var msg = Tools.TimeStamp(" ** {0} **: {1}",
+            var msg = TimeStamp.Format(" ** {0} **: {1}",
                                       connection.Channels[e.Target].GetDecoratedName(e.From),
                                       e.Text);
 
-            this[connection, e.Target].AddLine(11, msg);
+            _windows[connection, e.Target].AddLine(11, msg);
 
             return false;
         }
@@ -678,16 +718,16 @@ namespace GigaIRC.Client.WPF
                 return RecallWithInvoke(Connection_OnChannelAction, connection, e);
             }
 
-            if (!ContainsWindow(connection, e.Target))
+            if (!_windows.Contains(connection, e.Target))
             {
                 ProcessChannelJoin(connection, e);
             }
 
-            var msg = Tools.TimeStamp(" * {0} {1}",
+            var msg = TimeStamp.Format(" * {0} {1}",
                                       connection.Channels[e.Target].GetDecoratedName(e.From),
                                       e.Text);
 
-            this[connection, e.Target].AddLine(7, msg);
+            _windows[connection, e.Target].AddLine(7, msg);
             return false;
         }
 
@@ -700,7 +740,7 @@ namespace GigaIRC.Client.WPF
 
             var wnd = OpenQueryWindow(connection, e.Target);
 
-            var msg = Tools.TimeStamp("({0}): {1}", e.From.Nickname, e.Text);
+            var msg = TimeStamp.Format("({0}): {1}", e.From.Nickname, e.Text);
 
             wnd.AddLine(15, msg);
             return false;
@@ -715,17 +755,17 @@ namespace GigaIRC.Client.WPF
 
             if (e.Target == "AUTH")
             {
-                this[connection, "@@status@@"].AddLine(11, Tools.TimeStamp(" ** AUTH **: {0}", e.Text));
+                _windows[connection, "@@status@@"].AddLine(11, TimeStamp.Format(" ** AUTH **: {0}", e.Text));
             }
             else if (e.Target == "*")
             {
-                this[connection, "@@status@@"].AddLine(11, Tools.TimeStamp(" -{0}- {1}", e.From, e.Text));
+                _windows[connection, "@@status@@"].AddLine(11, TimeStamp.Format(" -{0}- {1}", e.From, e.Text));
             }
             else
             {
                 var wnd = OpenQueryWindow(connection, e.From.Nickname);
 
-                var msg = Tools.TimeStamp(" ** {0} **: {1}", e.From.Nickname, e.Text);
+                var msg = TimeStamp.Format(" ** {0} **: {1}", e.From.Nickname, e.Text);
 
                 wnd.AddLine(11, msg);
             }
@@ -741,7 +781,7 @@ namespace GigaIRC.Client.WPF
 
             var wnd = OpenQueryWindow(connection, e.From.Nickname);
 
-            var msg = Tools.TimeStamp(" * {0} {1}", e.From.Nickname, e.Text);
+            var msg = TimeStamp.Format(" * {0} {1}", e.From.Nickname, e.Text);
 
             wnd.AddLine(7, msg);
             return false;
@@ -754,14 +794,14 @@ namespace GigaIRC.Client.WPF
                 return RecallWithInvoke(Connection_OnPrivateCtcpReply, connection, e);
             }
 
-            var msg = Tools.TimeStamp(" * [{0} CTCP {1} reply]: {2}", e.From.Nickname, e.Command, e.Text);
-            if (ContainsWindow(connection, e.Target))
+            var msg = TimeStamp.Format(" * [{0} CTCP {1} reply]: {2}", e.From.Nickname, e.Command, e.Text);
+            if (_windows.Contains(connection, e.Target))
             {
-                this[connection, e.From.Nickname].AddLine(12, msg);
+                _windows[connection, e.From.Nickname].AddLine(12, msg);
             }
             else
             {
-                this[connection, "@@status@@"].AddLine(12, msg);
+                _windows[connection, "@@status@@"].AddLine(12, msg);
             }
 
             return false;
@@ -777,14 +817,14 @@ namespace GigaIRC.Client.WPF
             if (e.Command == "ACTION")
                 return false;
 
-            var msg = Tools.TimeStamp(" * [{0} CTCP {1}]: {2}", e.From.Nickname, e.Command, e.Text);
-            if (ContainsWindow(connection, e.Target))
+            var msg = TimeStamp.Format(" * [{0} CTCP {1}]: {2}", e.From.Nickname, e.Command, e.Text);
+            if (_windows.Contains(connection, e.Target))
             {
-                this[connection, e.From.Nickname].AddLine(12, msg);
+                _windows[connection, e.From.Nickname].AddLine(12, msg);
             }
             else
             {
-                this[connection, "@@status@@"].AddLine(12, msg);
+                _windows[connection, "@@status@@"].AddLine(12, msg);
             }
 
             return false;
@@ -797,14 +837,14 @@ namespace GigaIRC.Client.WPF
                 return RecallWithInvoke(Connection_OnChannelCtcpReply, connection, e);
             }
 
-            var msg = Tools.TimeStamp(" * [{0} CTCP {1} reply]: {2}", e.From.Nickname, e.Command, e.Text);
-            if (ContainsWindow(connection, e.Target))
+            var msg = TimeStamp.Format(" * [{0} CTCP {1} reply]: {2}", e.From.Nickname, e.Command, e.Text);
+            if (_windows.Contains(connection, e.Target))
             {
-                this[connection, e.Target].AddLine(12, msg);
+                _windows[connection, e.Target].AddLine(12, msg);
             }
             else
             {
-                this[connection, "@@status@@"].AddLine(12, msg);
+                _windows[connection, "@@status@@"].AddLine(12, msg);
             }
 
             return false;
@@ -820,14 +860,14 @@ namespace GigaIRC.Client.WPF
             if (e.Command == "ACTION")
                 return false;
 
-            var msg = Tools.TimeStamp(" * [{0} CTCP {1}]: {2}", e.From.Nickname, e.Command, e.Text);
-            if (ContainsWindow(connection, e.Target))
+            var msg = TimeStamp.Format(" * [{0} CTCP {1}]: {2}", e.From.Nickname, e.Command, e.Text);
+            if (_windows.Contains(connection, e.Target))
             {
-                this[connection, e.Target].AddLine(12, msg);
+                _windows[connection, e.Target].AddLine(12, msg);
             }
             else
             {
-                this[connection, "@@status@@"].AddLine(12, msg);
+                _windows[connection, "@@status@@"].AddLine(12, msg);
             }
 
             return false;
@@ -850,7 +890,7 @@ namespace GigaIRC.Client.WPF
             var conn = data.Item1.Connection;
             var target = (Channel)data.Item2;
 
-            var window = this[conn, target.Name];
+            var window = _windows[conn, target.Name];
 
             DockingManager.ActiveContent = window.AnchorableParent;
         }
@@ -858,9 +898,9 @@ namespace GigaIRC.Client.WPF
         private FlexList OpenQueryWindow(Connection connection, string target)
         {
             FlexList window;
-            if (!TryGetWindow(connection, target, out window))
+            if (!_windows.TryGetWindow(connection, target, out window))
             {
-                window = CreateWindow(connection, target, target);
+                window = CreateWindow(connection, target, target, PanelType.Query);
                 window.ShowTopic = false;
                 window.ShowListbox = false;
             }
@@ -869,22 +909,22 @@ namespace GigaIRC.Client.WPF
 
         private void ProcessChannelJoin(Connection connection, TargetEventArgs e)
         {
-            if (!ContainsWindow(connection, e.Target))
+            if (!_windows.Contains(connection, e.Target))
             {
-                var window = CreateWindow(connection, e.Target, e.Target);
+                var window = CreateWindow(connection, e.Target, e.Target, PanelType.Channel);
                 window.Closing += Channel_Closing;
                 window.ItemsSource = connection.Channels[e.Target].Users;
                 window.ListItemDoubleClickCommand = new RelayCommand(ChannelListItem_DoubleClick);
             }
 
-            this[connection, e.Target].AddLine(0, Tools.TimeStamp("You Joined {0}.", e.Target));
+            _windows[connection, e.Target].AddLine(0, TimeStamp.Format("You Joined {0}.", e.Target));
         }
 
         private void ProcessChannelPart(Connection connection, MessageEventArgs e)
         {
-            if (ContainsWindow(connection, e.Target))
+            if (_windows.Contains(connection, e.Target))
             {
-                this[connection, e.Target].Close();
+                _windows[connection, e.Target].Close();
             }
         }
 

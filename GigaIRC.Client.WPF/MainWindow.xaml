@@ -27,6 +27,9 @@
             <MenuItem Header="File">
                 <MenuItem Header="Exit" />
             </MenuItem>
+            <MenuItem Header="View">
+                <MenuItem Header="Session Tree" Command="{Binding ShowTreeListCommand}"/>
+            </MenuItem>
             <MenuItem Header="Connection">
                 <MenuItem Header="New..." />
             </MenuItem>
@@ -52,7 +55,7 @@
                     <avalon:AeroTheme />
                 </avalon:DockingManager.Theme>
                 <avalon:LayoutRoot>
-                <avalon:LayoutPanel Orientation="Horizontal">
+                <avalon:LayoutPanel x:Name="MasterPanel" Orientation="Horizontal">
                     <avalon:LayoutDocumentPane x:Name="MainContent">
                     </avalon:LayoutDocumentPane>
                 </avalon:LayoutPanel>

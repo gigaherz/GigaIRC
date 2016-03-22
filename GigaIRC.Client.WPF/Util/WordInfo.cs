@@ -1,6 +1,8 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Text.RegularExpressions;
+using GigaIRC.Client.WPF.Util;
 
 namespace GigaIRC.Util
 {
@@ -16,11 +18,11 @@ namespace GigaIRC.Util
         public bool IsUnderline { get; }
         public bool IsReverse { get; }
 
-        public bool IsLink { get; }
+        public Uri Link { get; }
 
         public string Word { get; }
 
-        public WordInfo(ColorCode back, ColorCode fore, bool bold, bool italic, bool under, bool rev, bool link, string wrd)
+        public WordInfo(ColorCode back, ColorCode fore, bool bold, bool italic, bool under, bool rev, Uri link, string wrd)
         {
             ForeColor = fore;
             BackColor = back;
@@ -28,7 +30,7 @@ namespace GigaIRC.Util
             IsItalic = italic;
             IsUnderline = under;
             IsReverse = rev;
-            IsLink = link;
+            Link = link;
             Word = wrd;
         }
 
@@ -179,19 +181,45 @@ namespace GigaIRC.Util
             while (match.Success)
             {
                 var g = match.Groups[0];
+
+                Uri uri = null;
+                try
+                {
+                    var text = g.Value;
+
+                    if (text.Contains(":/"))
+                        uri = new Uri(text);
+                    else if (text.StartsWith("ftp."))
+                        uri = new Uri("ftp://" + text);
+                    else
+                        uri = new Uri("http://" + text);
+                }
+                catch (Exception)
+                {
+                    // ignore
+                }
+
                 var idx = g.Index;
                 var len = g.Length;
-                if (idx > 0)
+                if (uri != null)
                 {
-                    yield return new WordInfo(back, fore, bold, italic, under, rev, false, wrd.Substring(0, idx));
+                    if (idx > 0)
+                    {
+                        yield return new WordInfo(back, fore, bold, italic, under, rev, null, wrd.Substring(0, idx));
+                    }
+                    yield return new WordInfo(back, fore, bold, italic, under, rev, uri, g.Value);
                 }
-                yield return new WordInfo(back, fore, bold, italic, under, rev, true, g.Value);
+                else
+                {
+                    yield return new WordInfo(back, fore, bold, italic, under, rev, null, wrd.Substring(0, idx+len));
+                }
+
                 wrd = wrd.Substring(idx + len);
                 match = FindUrl.Match(wrd);
             }
 
             if(wrd.Length > 0)
-                yield return new WordInfo(back, fore, bold, italic, under, rev, false, wrd);
+                yield return new WordInfo(back, fore, bold, italic, under, rev, null, wrd);
         }
     }
 }

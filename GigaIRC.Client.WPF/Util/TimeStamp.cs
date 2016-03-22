@@ -2,9 +2,9 @@
 
 namespace GigaIRC.Client.WPF.Util
 {
-    class Tools
+    public class TimeStamp
     {
-        public static string TimeStamp(string format, params object[]args)
+        public static string Format(string format, params object[]args)
         {
             var now = DateTime.Now;
 

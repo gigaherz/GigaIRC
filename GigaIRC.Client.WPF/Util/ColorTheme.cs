@@ -1,6 +1,7 @@
 ﻿using System.Windows.Media;
+using GigaIRC.Util;
 
-namespace GigaIRC.Util
+namespace GigaIRC.Client.WPF.Util
 {
     public static class ColorTheme
     {

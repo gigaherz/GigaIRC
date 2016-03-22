@@ -85,8 +85,12 @@
       <DependentUpon>QuickConnect.xaml</DependentUpon>
     </Compile>
     <Compile Include="Dockable\DockableBase.cs" />
+    <Compile Include="Dockable\PanelType.cs" />
     <Compile Include="Dockable\Preferences.xaml.cs">
       <DependentUpon>Preferences.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Dockable\SessionTree.xaml.cs">
+      <DependentUpon>SessionTree.xaml</DependentUpon>
     </Compile>
     <Compile Include="Dockable\WebBrowser.xaml.cs">
       <DependentUpon>WebBrowser.xaml</DependentUpon>
@@ -99,14 +103,17 @@
     </Compile>
     <Compile Include="Properties\Annotations.cs" />
     <Compile Include="RelayCommand.cs" />
-    <Compile Include="Util\ColorCode.cs" />
+    <Compile Include="Tree\ConnectionData.cs" />
+    <Compile Include="Tree\GenericItem.cs" />
+    <Compile Include="Tree\SessionData.cs" />
     <Compile Include="Util\ColorTheme.cs" />
     <Compile Include="Util\FormsWebBrowser.cs" />
     <Compile Include="Util\LineInfo.cs" />
     <Compile Include="Util\LineToParagraphConverter.cs" />
     <Compile Include="Util\PortConverter.cs" />
-    <Compile Include="Util\Tools.cs" />
+    <Compile Include="Util\TimeStamp.cs" />
     <Compile Include="Util\WordInfo.cs" />
+    <Compile Include="WindowManager.cs" />
     <Page Include="Dialogs\QuickConnect.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
@@ -116,6 +123,10 @@
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="Dockable\Preferences.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Dockable\SessionTree.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

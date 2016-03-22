@@ -1,5 +1,7 @@
 
-namespace GigaIRC.Util
+using GigaIRC.Util;
+
+namespace GigaIRC.Client.WPF.Util
 {
     public class LineInfo
     {

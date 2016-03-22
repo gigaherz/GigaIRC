@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 using GigaIRC.Annotations;
 using GigaIRC.Config;
 using GigaIRC.Events;
+using GigaIRC.Util;
 
 namespace GigaIRC.Protocol
 {

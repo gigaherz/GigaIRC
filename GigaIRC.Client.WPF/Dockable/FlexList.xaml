@@ -5,6 +5,7 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:dockable="clr-namespace:GigaIRC.Client.WPF.Dockable"
         xmlns:util="clr-namespace:GigaIRC.Util"
+        xmlns:util1="clr-namespace:GigaIRC.Client.WPF.Util"
         x:Class="GigaIRC.Client.WPF.Dockable.FlexList"
         mc:Ignorable="d" 
         d:DesignHeight="250" d:DesignWidth="500"
@@ -49,7 +50,7 @@
             </Grid.ColumnDefinitions>
             <RichTextBox x:Name="MainContent"
                          VerticalScrollBarVisibility="Visible" HorizontalScrollBarVisibility="Disabled"
-                         Background="{x:Static util:ColorTheme.BackgroundBrush}"
+                         Background="{x:Static util1:ColorTheme.BackgroundBrush}"
                          IsReadOnly = "True" IsReadOnlyCaretVisible = "False"
                          FontFamily = "Consolas" FontSize = "12.5" />
             <GridSplitter Visibility="{Binding Path=ListboxVisibility}" Grid.Column="1" ResizeBehavior="PreviousAndNext" Width="4" />

@@ -44,6 +44,7 @@ namespace GigaIRC.Protocol
         public EventChain<Connection, ModeChangeEventArgs> OnUserModeChange = new EventChain<Connection, ModeChangeEventArgs>();
         public EventChain<Connection, ModeChangeEventArgs> OnChannelModeChange = new EventChain<Connection, ModeChangeEventArgs>();
 
+        public EventChain<Connection, MessageEventArgs> OnUserModes = new EventChain<Connection, MessageEventArgs>();
         public EventChain<Connection, MessageEventArgs> OnChannelModes = new EventChain<Connection, MessageEventArgs>();
 
         public void ConnectTo(Server svr)

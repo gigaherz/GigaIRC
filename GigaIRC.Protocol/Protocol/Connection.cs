@@ -5,6 +5,7 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Runtime.CompilerServices;
+using System.Threading;
 using System.Threading.Tasks;
 using GigaIRC.Annotations;
 using GigaIRC.Config;
@@ -111,6 +112,8 @@ namespace GigaIRC.Protocol
                 OnPropertyChanged();
             }
         }
+
+        public NetworkIdentity NetworkIdentity { get; set; }
 
         public string PreModes { get; set; }
         public string PreChars { get; set; }
@@ -343,7 +346,7 @@ namespace GigaIRC.Protocol
             }
             else if (cmd.Is("CAP"))
             {
-                Capabilities.Received(cmd);
+                Capabilities.CapabilityResponse(cmd);
             }
             else if (cmd.CmdText == "001") //Welcome message
             {
@@ -647,6 +650,9 @@ namespace GigaIRC.Protocol
                 }
                 else
                 {
+                    string modeString = string.Join(" ", cmd.Params.ToArray(), 1, cmd.Params.Count - 1);
+                    Session.OnUserModes.Invoke(this, new MessageEventArgs(cmd.From, chanOrUser, modeString));
+
                     //TODO: user modes
                 }
             }
@@ -734,14 +740,14 @@ namespace GigaIRC.Protocol
             Address = ep.Address.ToString();
             Port = ep.Port;
 
-            Dns.BeginGetHostEntry(ep.Address, GetHostEntryCallback, null);
+            new Thread(HostnameFromIpThread).Start();
         }
 
-        private void GetHostEntryCallback(IAsyncResult ar)
+        private void HostnameFromIpThread()
         {
             try
             {
-                Address = Dns.EndGetHostEntry(ar).HostName;
+                Address = Dns.GetHostEntry(Address).HostName;
             }
             catch (Exception e)
             {

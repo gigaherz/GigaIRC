@@ -113,6 +113,8 @@ namespace GigaIRC.Protocol
 
         public bool Is(UserInfo u)
         {
+            if (u == null)
+                return false;
             return Is(u.Nickname);
         }
 

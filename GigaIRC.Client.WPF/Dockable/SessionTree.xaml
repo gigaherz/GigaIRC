@@ -8,21 +8,51 @@
                        mc:Ignorable="d" d:DesignHeight="200" d:DesignWidth="200"
                        DataContext="{Binding RelativeSource={RelativeSource Self}}">
     <dockable:DockableBase.Resources>
-        <HierarchicalDataTemplate  x:Key="SessionDataTemplate" DataType="{x:Type tree:SessionData}" ItemsSource="{Binding Items}">
-            <TextBlock Text="{Binding DisplayName}" />
-        </HierarchicalDataTemplate>
-        <HierarchicalDataTemplate  x:Key="ConnectionDataTemplate" DataType="{x:Type tree:ConnectionData}" ItemsSource="{Binding Items}">
-            <TextBlock Text="{Binding DisplayName}" />
-        </HierarchicalDataTemplate>
-        <HierarchicalDataTemplate  x:Key="GenericItemDataTemplate" DataType="{x:Type tree:GenericItem}" ItemsSource="{Binding Items}">
-            <TextBlock Text="{Binding DisplayName}" />
-        </HierarchicalDataTemplate>
-        <HierarchicalDataTemplate  x:Key="WindowDataTemplate" DataType="{x:Type dockable:FlexList}">
-            <TextBlock Text="{Binding Title}" />
-        </HierarchicalDataTemplate>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="/Stylesheet.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+            
+            <HierarchicalDataTemplate  x:Key="SessionDataTemplate"
+                                       DataType="{x:Type tree:SessionData}" ItemsSource="{Binding Items}">
+                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                    <Image Width="16" Height="16" Margin="8,0,0,0" Source="{StaticResource Folder}"></Image>
+                    <TextBlock Margin="12,4" Text="{Binding DisplayName}" />
+                </StackPanel>
+            </HierarchicalDataTemplate>
+            <HierarchicalDataTemplate  x:Key="ConnectionDataTemplate"
+                                       DataType="{x:Type tree:ConnectionData}" ItemsSource="{Binding Items}">
+                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                    <Image Width="16" Height="16" Margin="8,0,0,0" Source="{StaticResource Folder}"></Image>
+                    <TextBlock Margin="8,4" Text="{Binding DisplayName}" />
+                </StackPanel>
+            </HierarchicalDataTemplate>
+            <HierarchicalDataTemplate  x:Key="GenericItemDataTemplate"
+                                       DataType="{x:Type tree:GenericItem}" ItemsSource="{Binding Items}">
+                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                    <Image Width="16" Height="16" Margin="8,0,0,0" Source="{StaticResource Folder}"></Image>
+                    <TextBlock Margin="8,4" Text="{Binding DisplayName}" />
+                </StackPanel>
+            </HierarchicalDataTemplate>
+            <HierarchicalDataTemplate  x:Key="WindowDataTemplate" DataType="{x:Type dockable:DockableBase}">
+                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                    <Image Width="16" Height="16" Margin="8,0,0,0" Source="{StaticResource Window}"></Image>
+                    <TextBlock Margin="8,4" Text="{Binding Title}" />
+                </StackPanel>
+            </HierarchicalDataTemplate>
+        </ResourceDictionary>
     </dockable:DockableBase.Resources>
     <Grid>
-            <TreeView ItemsSource="{Binding Root.Items}" ItemTemplateSelector="{Binding TreeItemsTemplateSelector}">
-            </TreeView>
+        <TreeView ItemsSource="{Binding Root.Items}"
+                  ItemTemplateSelector="{Binding TreeItemsTemplateSelector}" 
+                  SelectedItemChanged="TreeView_OnSelectedItemChanged">
+            <TreeView.Resources>
+                <Style TargetType="{x:Type TreeViewItem}">
+                    <Style.Setters>
+                        <Setter Property="IsExpanded" Value="{Binding IsExpanded, Mode=TwoWay}" />
+                    </Style.Setters>
+                </Style>
+            </TreeView.Resources>
+        </TreeView>
     </Grid>
 </dockable:DockableBase>

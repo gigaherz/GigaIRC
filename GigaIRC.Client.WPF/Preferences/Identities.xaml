@@ -1,14 +1,51 @@
-﻿<Page x:Class="GigaIRC.Client.WPF.Preferences.Identities"
-      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-      xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
-      xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
-      xmlns:local="clr-namespace:GigaIRC.Client.WPF.Preferences"
-      mc:Ignorable="d" 
-      d:DesignHeight="300" d:DesignWidth="300"
-      Title="Identities">
+﻿<local:PreferencesPage x:Class="GigaIRC.Client.WPF.Preferences.Identities"
+                       xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                       xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                       xmlns:local="clr-namespace:GigaIRC.Client.WPF.Preferences"
+                       xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+                       xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+                       mc:Ignorable="d" d:DesignWidth="640" d:DesignHeight="480"
+                       DesignBackground="{x:Static SystemColors.ControlBrush}"
+                       DataContext="{Binding Settings, Mode=OneWay, RelativeSource={RelativeSource Self}}">
+
+    <local:PreferencesPage.Resources>
+        <Style TargetType="Button">
+            <Setter Property="Padding" Value="12,4" />
+        </Style>
+        <Style TargetType="TextBox">
+            <Setter Property="Padding" Value="4,2" />
+        </Style>
+    </local:PreferencesPage.Resources>
 
     <Grid>
-        
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="Auto"/>
+            <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
+
+        <Grid Margin="0,0,4,0">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+
+            <Label Content="Identities"/>
+            <ListBox Grid.Row="1" MinWidth="160" Margin="0,0,0,4" ItemsSource="{Binding Identities}" />
+
+            <Grid Grid.Row="2">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="1*"/>
+                    <ColumnDefinition Width="1*"/>
+                </Grid.ColumnDefinitions>
+
+                <Button Content="New" Margin="0,0,4,0" />
+                <Button Content="Remove" Grid.Column="1" Margin="0" />
+            </Grid>
+        </Grid>
+
+        <GroupBox Grid.Column="1" Header="Identity Properties">
+            
+        </GroupBox>
     </Grid>
-</Page>
+</local:PreferencesPage>

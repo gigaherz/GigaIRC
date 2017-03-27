@@ -2,9 +2,10 @@
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
                     xmlns:local="clr-namespace:GigaIRC.Client.WPF">
 
-    <BitmapImage x:Key="NewBrowser" UriSource="Resources/NewBrowserTab.png" />
-    <BitmapImage x:Key="NewConnection" UriSource="Resources/NewConnection.png" />
-    <BitmapImage x:Key="Placeholder" UriSource="Resources/Placeholder.png" />
-    <BitmapImage x:Key="Preferences" UriSource="Resources/Preferences.png" />
+    <BitmapImage x:Key="NewBrowser" UriSource="Resources/browser-2x.png" />
+    <BitmapImage x:Key="NewConnection" UriSource="Resources/monitor-2x.png" />
+    <BitmapImage x:Key="Preferences" UriSource="Resources/cog-2x.png" />
+    <BitmapImage x:Key="Folder" UriSource="Resources/folder-2x.png" />
+    <BitmapImage x:Key="Window" UriSource="Resources/browser-2x.png" />
     
 </ResourceDictionary>

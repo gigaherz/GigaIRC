@@ -8,12 +8,26 @@ using Xceed.Wpf.AvalonDock.Layout;
 
 namespace GigaIRC.Client.WPF.Dockable
 {
-    public class DockableBase : UserControl, INotifyPropertyChanged
+    public abstract class DockableBase : UserControl, INotifyPropertyChanged
     {
         private string _title;
         private Brush _designBackground;
+        private PanelType _panelType = PanelType.Other;
+        private bool _isExpanded = true;
 
-        public LayoutAnchorable AnchorableParent { get; set; }
+        public LayoutContent LayoutParent { get; set; }
+
+        // For the treeview only
+        public bool IsExpanded
+        {
+            get { return _isExpanded; }
+            set
+            {
+                if (value == _isExpanded) return;
+                _isExpanded = value;
+                OnPropertyChanged();
+            }
+        }
 
         public string Title
         {
@@ -22,6 +36,17 @@ namespace GigaIRC.Client.WPF.Dockable
             {
                 if (value == _title) return;
                 _title = value;
+                OnPropertyChanged();
+            }
+        }
+
+        public PanelType PanelType
+        {
+            get { return _panelType; }
+            set
+            {
+                if (value == _panelType) return;
+                _panelType = value;
                 OnPropertyChanged();
             }
         }

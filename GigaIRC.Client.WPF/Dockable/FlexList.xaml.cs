@@ -24,8 +24,10 @@ namespace GigaIRC.Client.WPF.Dockable
         private bool _showTopic = true;
         private bool _showListbox = true;
         private bool _showInput = true;
+        private string _topicTextModifiable;
+        private bool _showTopicInfo = false;
         private object _itemsSource;
-        private PanelType _panelType = PanelType.Other;
+        private GridLength _listWidth = new GridLength(120);
 
         public ICommand ListItemDoubleClickCommand { get; set; }
         public ICommand LinkClickedCommand { get; set; }
@@ -51,13 +53,13 @@ namespace GigaIRC.Client.WPF.Dockable
             }
         }
 
-        public PanelType PanelType
+        public GridLength ListWidth
         {
-            get { return _panelType; }
+            get { return _showListbox ? _listWidth : new GridLength(); }
             set
             {
-                if (value == _panelType) return;
-                _panelType = value;
+                if (value.Equals(_listWidth)) return;
+                _listWidth = value;
                 OnPropertyChanged();
             }
         }
@@ -81,10 +83,8 @@ namespace GigaIRC.Client.WPF.Dockable
                 if (value == _showTopic) return;
                 _showTopic = value;
                 OnPropertyChanged();
-                OnPropertyChanged(nameof(TopicVisibility));
             }
         }
-        public Visibility TopicVisibility => _showTopic ? Visibility.Visible : Visibility.Collapsed;
 
         public bool ShowListbox
         {
@@ -94,10 +94,9 @@ namespace GigaIRC.Client.WPF.Dockable
                 if (value == _showListbox) return;
                 _showListbox = value;
                 OnPropertyChanged();
-                OnPropertyChanged(nameof(ListboxVisibility));
+                OnPropertyChanged(nameof(ListWidth));
             }
         }
-        public Visibility ListboxVisibility => _showTopic ? Visibility.Visible : Visibility.Collapsed;
 
         public bool ShowInput
         {
@@ -109,11 +108,19 @@ namespace GigaIRC.Client.WPF.Dockable
                 OnPropertyChanged();
             }
         }
-        public Visibility InputVisibility => _showInput ? Visibility.Visible : Visibility.Collapsed;
+
+        public bool ShowInputbox
+        {
+            get
+            {
+                return ShowInput && IsFocused;
+            }
+        }
 
         public event TextInputEventHandler OnInput;
 
         public Connection Connection { get; set; }
+
         public string WindowId { get; set; }
 
         public string TopicText
@@ -124,6 +131,27 @@ namespace GigaIRC.Client.WPF.Dockable
                 if (value == _topicText) return;
                 _topicText = value;
                 OnPropertyChanged();
+                TopicTextModifiable = value;
+            }
+        }
+
+        public string TopicTextModifiable
+        {
+            get { return _topicTextModifiable; }
+            set
+            {
+                if (value == _topicTextModifiable) return;
+                _topicTextModifiable = value;
+                OnPropertyChanged();
+                OnPropertyChanged(nameof(ShowSetTopicButton));
+            }
+        }
+
+        public bool ShowSetTopicButton
+        {
+            get
+            {
+                return ShowTopic && (TopicText != TopicTextModifiable);
             }
         }
 
@@ -134,6 +162,20 @@ namespace GigaIRC.Client.WPF.Dockable
             {
                 if (value == _topicInfo) return;
                 _topicInfo = value;
+                OnPropertyChanged();
+            }
+        }
+
+        public bool ShowTopicInfo
+        {
+            get
+            {
+                return _showTopicInfo;
+            }
+            set
+            {
+                if (value == _showTopicInfo) return;
+                _showTopicInfo = value;
                 OnPropertyChanged();
             }
         }
@@ -180,12 +222,12 @@ namespace GigaIRC.Client.WPF.Dockable
             _content?.Blocks.Clear();
         }
 
-        public void AddLine(int color, string text)
+        public void AddLine(ColorCode color, string text)
         {
             if (_content == null)
                 return;
 
-            var line = new LineInfo((ColorCode)color, text);
+            var line = new LineInfo(color, text);
             Lines.Add(line);
 
             Dispatcher.BeginInvoke(new Action(() =>
@@ -266,21 +308,36 @@ namespace GigaIRC.Client.WPF.Dockable
                 OnInput?.Invoke(this, new TextInputEventArgs(Input.Text));
                 Input.Text = null;
             }
+            else if (e.Key == Key.Tab)
+            {
+
+            }
         }
 
         public void Close()
         {
-            var anchorable = AnchorableParent;
+            var anchorable = LayoutParent;
             anchorable?.Close();
         }
 
         private void ItemsListBox_OnMouseDoubleClick(object sender, MouseButtonEventArgs e)
         {
-            if (ListItemDoubleClickCommand != null && ListItemDoubleClickCommand.CanExecute(ItemsListBox.SelectedItem))
+            if (ListItemDoubleClickCommand != null &&
+                ListItemDoubleClickCommand.CanExecute(ItemsListBox.SelectedItem))
             {
-                var data = Tuple.Create(this, ItemsListBox.SelectedItem);
-                ListItemDoubleClickCommand.Execute(data);
+                ListItemDoubleClickCommand.Execute(Tuple.Create(this, ItemsListBox.SelectedItem));
             }
+        }
+
+        // Annoying, but IsKeyboardFocusWithin is not a dependency property so I can't bind to it directly.
+        private void TextBox_IsKeyboardFocusWithinChanged(object sender, DependencyPropertyChangedEventArgs e)
+        {
+            ShowTopicInfo = TopicTextBox.IsKeyboardFocusWithin;
+        }
+
+        private void MainContent_KeyDown(object sender, KeyEventArgs e)
+        {
+            Input.Focus();
         }
     }
 

@@ -4,7 +4,8 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:GigaIRC.Client.WPF"
-        xmlns:avalon="http://schemas.xceed.com/wpf/xaml/avalondock" x:Class="GigaIRC.Client.WPF.MainWindow"
+        xmlns:avalon="http://schemas.xceed.com/wpf/xaml/avalondock" 
+        x:Class="GigaIRC.Client.WPF.MainWindow"
         mc:Ignorable="d"
         DataContext="{Binding RelativeSource={RelativeSource Self}}"
         Title="MainWindow" Background="{x:Static SystemColors.ControlBrush}"
@@ -25,38 +26,39 @@
         </Grid.RowDefinitions>
         <Menu>
             <MenuItem Header="File">
-                <MenuItem Header="Exit" />
+                <MenuItem Header="Exit" Command="{Binding ExitCommand}" />
             </MenuItem>
             <MenuItem Header="View">
                 <MenuItem Header="Session Tree" Command="{Binding ShowTreeListCommand}"/>
             </MenuItem>
             <MenuItem Header="Connection">
-                <MenuItem Header="New..." />
+                <MenuItem Header="New..." Command="{Binding NewConnectionCommand}" />
             </MenuItem>
             <MenuItem Header="Options">
-                <MenuItem Header="Preferences..."/>
+                <MenuItem Header="Preferences..." Command="{Binding OpenPreferencesCommand}"/>
             </MenuItem>
         </Menu>
         <ToolBarTray Grid.Row="1">
             <ToolBar x:Name="MainToolbar">
                 <Button Command="{Binding NewConnectionCommand}">
-                    <Image Source="{StaticResource NewConnection}" />
+                    <Image Width="16" Height="16" Margin="1" Source="{StaticResource NewConnection}" />
                 </Button>
                 <Button Command="{Binding OpenPreferencesCommand}">
-                    <Image Source="{StaticResource Preferences}" />
+                    <Image Width="16" Height="16" Margin="1" Source="{StaticResource Preferences}" />
                 </Button>
                 <Button Command="{Binding NewBrowserCommand}">
-                    <Image Source="{StaticResource NewBrowser}" />
+                    <Image Width="16" Height="16" Margin="1" Source="{StaticResource NewBrowser}" />
                 </Button>
             </ToolBar>
         </ToolBarTray>
-        <avalon:DockingManager x:Name="DockingManager" Grid.Row="2">
+        <avalon:DockingManager x:Name="DockingManager" Grid.Row="2" 
+                               ActiveContentChanged="DockingManager_ActiveContentChanged" DocumentClosed="DockingManager_DocumentClosed" DocumentClosing="DockingManager_DocumentClosing" AllowMixedOrientation="True">
                 <avalon:DockingManager.Theme>
                     <avalon:AeroTheme />
                 </avalon:DockingManager.Theme>
                 <avalon:LayoutRoot>
                 <avalon:LayoutPanel x:Name="MasterPanel" Orientation="Horizontal">
-                    <avalon:LayoutDocumentPane x:Name="MainContent">
+                    <avalon:LayoutDocumentPane>
                     </avalon:LayoutDocumentPane>
                 </avalon:LayoutPanel>
             </avalon:LayoutRoot>

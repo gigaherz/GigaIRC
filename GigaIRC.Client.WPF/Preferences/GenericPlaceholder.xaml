@@ -1,0 +1,32 @@
+﻿<local:PreferencesPage x:Class="GigaIRC.Client.WPF.Preferences.GenericPlaceholder"
+                       xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                       xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                       xmlns:local="clr-namespace:GigaIRC.Client.WPF.Preferences"
+                       xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+                       xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+                       mc:Ignorable="d" d:DesignWidth="640" d:DesignHeight="480"
+                       DesignBackground="{x:Static SystemColors.ControlBrush}"
+                       DataContext="{Binding Node, Mode=OneWay, RelativeSource={RelativeSource Self}}">
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <Label Content="{Binding Name}" />
+        <ItemsControl ItemsSource="{Binding Children}" Grid.Row="1" Padding="15,0,0,0">
+            <ItemsControl.ItemTemplate>
+                <DataTemplate>
+                    <Label>
+                        <Hyperlink Command="{Binding ActivatePageCommand, Mode=OneWay, 
+                            RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type local:GenericPlaceholder}}}"
+                                   CommandParameter="{Binding Mode=OneWay}">
+                            <Run Text="{Binding Name}" />
+                        </Hyperlink>
+                    </Label>
+                </DataTemplate>
+            </ItemsControl.ItemTemplate>
+        </ItemsControl>
+    </Grid>
+</local:PreferencesPage>

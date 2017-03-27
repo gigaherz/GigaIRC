@@ -18,6 +18,7 @@
         <DataTemplate x:Key="ChannelDataTemplate">
             <TextBlock Text="{Binding Name}" />
         </DataTemplate>
+        <BooleanToVisibilityConverter x:Key="BoolToVis" />
     </dockable:DockableBase.Resources>
     <Grid>
         <Grid.RowDefinitions>
@@ -25,7 +26,7 @@
             <RowDefinition Height="*"/>
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
-        <Grid Visibility="{Binding Path=TopicVisibility}">
+        <Grid Visibility="{Binding Path=ShowTopic, Converter={StaticResource BoolToVis}}">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="Auto"/>
@@ -34,31 +35,36 @@
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
-                <TextBox Text="{Binding TopicText}" />
-                <Button x:Name="Button" Grid.Column="1" Content="Set" Padding="8 2"/>
+                <TextBox x:Name="TopicTextBox" Text="{Binding TopicTextModifiable, UpdateSourceTrigger=PropertyChanged}" IsKeyboardFocusWithinChanged="TextBox_IsKeyboardFocusWithinChanged" />
+                <Button x:Name="SetTopic" Grid.Column="1" Content="Set" Padding="8 2" Visibility="{Binding ShowSetTopicButton, Converter={StaticResource BoolToVis}}"/>
+                <Button x:Name="CancelTopic" Grid.Column="2" Content="Cancel" Padding="8 2" Visibility="{Binding ShowSetTopicButton, Converter={StaticResource BoolToVis}}"/>
             </Grid>
             <TextBox Text="{Binding TopicInfo}" Grid.Row="1"
                      Background="Transparent" BorderBrush="Transparent"
-                     BorderThickness="0" IsReadOnly="True"/>
+                     BorderThickness="0" IsReadOnly="True" Visibility="{Binding ShowTopicInfo, Converter={StaticResource BoolToVis}}" />
         </Grid>
         <Grid Grid.Row="1">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*"/>
                 <ColumnDefinition Width="Auto"/>
-                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="{Binding ListWidth, Mode=TwoWay}"/>
             </Grid.ColumnDefinitions>
             <RichTextBox x:Name="MainContent"
                          VerticalScrollBarVisibility="Visible" HorizontalScrollBarVisibility="Disabled"
                          Background="{x:Static util1:ColorTheme.BackgroundBrush}"
                          IsReadOnly = "True" IsReadOnlyCaretVisible = "False"
-                         FontFamily = "Consolas" FontSize = "12.5" />
-            <GridSplitter Visibility="{Binding Path=ListboxVisibility}" Grid.Column="1" ResizeBehavior="PreviousAndNext" Width="4" />
-            <ListBox x:Name="ItemsListBox" Width="150" Visibility="{Binding Path=ListboxVisibility}" Grid.Column="2"
+                         FontFamily = "Consolas" FontSize = "12.5" KeyDown="MainContent_KeyDown" />
+            
+            <GridSplitter Visibility="{Binding Path=ListboxVisibility}" Grid.Column="1" Width="4" ResizeBehavior="PreviousAndNext" />
+            <ListBox x:Name="ItemsListBox" Visibility="{Binding Path=ShowListbox, Converter={StaticResource BoolToVis}}" Grid.Column="2"
                      ItemsSource="{Binding ItemsSource}" ItemTemplateSelector="{Binding ListItemsTemplateSelector}"
                      MouseDoubleClick="ItemsListBox_OnMouseDoubleClick">
             </ListBox>
         </Grid>
-        <TextBox x:Name="Input" Grid.Row="2" Visibility="{Binding Path=InputVisibility}" PreviewKeyDown="Input_PreviewKeyDown" />
+        <TextBox x:Name="Input" Grid.Row="2" 
+                 Visibility="{Binding Path=ShowInput, Converter={StaticResource BoolToVis}}" 
+                 PreviewKeyDown="Input_PreviewKeyDown" />
     </Grid>
 </dockable:DockableBase>

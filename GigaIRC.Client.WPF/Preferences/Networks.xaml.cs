@@ -1,25 +1,36 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
+﻿using GigaIRC.Config;
+using System.ComponentModel;
 
 namespace GigaIRC.Client.WPF.Preferences
 {
-    /// <summary>
-    /// Interaction logic for Networks.xaml
-    /// </summary>
-    public partial class Networks : Page
+    public partial class Networks : INotifyPropertyChanged
     {
+        public Settings Settings => MainWindow.Instance.Session.Settings;
+        
+        private Network _selectedNetwork;
+        public Network SelectedNetwork
+        {
+            get { return _selectedNetwork; }
+            set
+            {
+                if (ReferenceEquals(value, _selectedNetwork)) return;
+                _selectedNetwork = value;
+                OnPropertyChanged();
+            }
+        }
+
+        private Server _selectedServer;
+        public Server SelectedServer
+        {
+            get { return _selectedServer; }
+            set
+            {
+                if (ReferenceEquals(value, _selectedServer)) return;
+                _selectedServer = value;
+                OnPropertyChanged();
+            }
+        }
+
         public Networks()
         {
             InitializeComponent();

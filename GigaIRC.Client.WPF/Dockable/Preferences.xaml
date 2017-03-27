@@ -4,19 +4,48 @@
       xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
       xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
       xmlns:dockable="clr-namespace:GigaIRC.Client.WPF.Dockable"
-      mc:Ignorable="d" 
-      d:DesignHeight="300" d:DesignWidth="600"
-      DesignBackground="{x:Static SystemColors.ControlBrush}"
-      Title="Preferences">
-
+      xmlns:prefs="clr-namespace:GigaIRC.Client.WPF.Preferences"
+      mc:Ignorable="d"
+      Background="{x:Static SystemColors.ControlBrush}"
+      Title="Preferences" d:DesignWidth="800" d:DesignHeight="480">
     <Grid Margin="4">
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="200"/>
-            <ColumnDefinition Width="217*"/>
+            <ColumnDefinition Width="*"/>
         </Grid.ColumnDefinitions>
-        <TreeView x:Name="Tree"></TreeView>
-        <GroupBox Grid.Column="1" Header="Current Page Title" Margin="6,0,0,0">
-            <Frame x:Name="Frame"></Frame>
-        </GroupBox>
+        <TreeView x:Name="Tree" 
+                  DataContext="{x:Static prefs:PreferencesTree.Instance}" 
+                  ItemsSource="{Binding Children}" 
+                  SelectedItemChanged="Tree_SelectedItemChanged">
+            <TreeView.Template>
+                <ControlTemplate>
+                    <ScrollViewer>
+                        <ItemsPresenter/>
+                    </ScrollViewer>
+                </ControlTemplate>
+            </TreeView.Template>
+            <TreeView.ItemContainerStyle>
+                <Style TargetType="{x:Type TreeViewItem}">
+                    <Setter Property="IsExpanded" Value="{Binding IsExpanded, Mode=TwoWay}"/>
+                    <Setter Property="IsSelected" Value="{Binding IsSelected, Mode=TwoWay}"/>
+                </Style>
+            </TreeView.ItemContainerStyle>
+            <TreeView.ItemTemplate>
+                <HierarchicalDataTemplate ItemsSource="{Binding Children}" DataType="{x:Type prefs:PreferencesTree}">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="auto" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <!--<Image Source="{Binding Icon, Mode=OneWay}" />-->
+                        <Label Grid.Column="1" Content="{Binding Name, Mode=OneWay}" />
+                    </Grid>
+                </HierarchicalDataTemplate>
+            </TreeView.ItemTemplate>
+        </TreeView>
+        <Frame x:Name="Frame" Grid.Column="1" Margin="6,0,0,0"
+               Content="{Binding CurrentPage,RelativeSource={RelativeSource AncestorType={x:Type dockable:Preferences}}}"
+               NavigationUIVisibility="Hidden">
+        </Frame>
     </Grid>
 </dockable:DockableBase>

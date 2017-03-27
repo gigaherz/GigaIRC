@@ -1,34 +1,47 @@
-﻿using System.Linq;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
 
 namespace GigaIRC.Protocol
 {
     public class Capabilities
     {
-        readonly Connection parent;
+        private readonly Connection parent;
+
+        private readonly List<string> supported = new List<string>();
+        private readonly List<string> accepted = new List<string>();
+
+        private string authenticationMechanism = "PLAIN";
 
         public Capabilities(Connection parent)
         {
             this.parent = parent;
         }
 
-        public void Received(Command cmd)
+        public void CapabilityResponse(Command cmd)
         {
             if (cmd.Params.Count > 1 && cmd.Params[1] == "LS")
             {
-                //"CAP REQ :multi-prefix sasl"
+                supported.Clear();
+                accepted.Clear();
+                supported.AddRange(cmd.Params.Last().ToLowerInvariant().Split(' '));
 
-                int caps = 0;
-                string capsRequest = "";
+                var capsRequest = new List<string>();
 
-                if (cmd.Params.Last().Contains("multi-prefix"))
+                if (supported.Contains("multi-prefix"))
                 {
-                    caps = 1;
-                    capsRequest = "multi-prefix";
+                    capsRequest.Add("multi-prefix");
                 }
 
-                if (caps > 0)
+                if (supported.Contains("sasl") && !string.IsNullOrEmpty(parent.NetworkIdentity?.SaslUsername))
                 {
-                    parent.SendLine("CAP REQ :" + capsRequest);
+                    capsRequest.Add("sasl");
+                }
+
+                if (capsRequest.Count > 0)
+                {
+                    parent.SendLine("CAP REQ :" + string.Join(" ", capsRequest));
                 }
                 else
                 {
@@ -37,8 +50,35 @@ namespace GigaIRC.Protocol
             }
             else if (cmd.Params.Count > 1 && cmd.Params[1] == "ACK")
             {
-                parent.SendLine("CAP END");
+                accepted.Clear();
+                accepted.AddRange(cmd.Params.Last().ToLowerInvariant().Split(' '));
+
+                if (accepted.Contains("sasl") && !string.IsNullOrEmpty(parent.NetworkIdentity?.SaslUsername))
+                {
+                    parent.SendLine("AUTHENTICATE " + authenticationMechanism);
+                }
+                else
+                {
+                    parent.SendLine("CAP END");
+                }
             }
+            else if (cmd.Params.Count > 1 && cmd.Params[1] == "NAK")
+            {
+                accepted.RemoveAll(cmd.Params.Last().ToLowerInvariant().Split(' ').ToList().Contains);
+            }
+        }
+
+        public void AuthenticationRequest(Command cmd)
+        {
+            if (cmd.Params.Count > 1 && cmd.Params[1] == "+")
+            {
+                parent.SendLine("AUTHENTICATE " + EncodeSaslPlain(parent.NetworkIdentity.SaslUsername, parent.NetworkIdentity.SaslPassword));
+            }
+        }
+
+        private string EncodeSaslPlain(string username, string password)
+        {
+            return Convert.ToBase64String(Encoding.ASCII.GetBytes(username + '\x01' + password));
         }
     }
 }

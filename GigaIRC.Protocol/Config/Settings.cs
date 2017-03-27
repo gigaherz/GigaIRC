@@ -5,19 +5,16 @@ using System.Linq;
 using GDDL.Config;
 using GDDL.Structure;
 using GigaIRC.Util;
+using System.Collections.ObjectModel;
 
 namespace GigaIRC.Config
 {
     public class Settings
     {
-        private readonly List<Network> networks = new List<Network>();
-        private readonly List<Identity> identities = new List<Identity>();
+        private ObservableCollection<Network> Networks { get; } = new ObservableCollection<Network>();
+        private ObservableCollection<Identity> Identities { get; } = new ObservableCollection<Identity>();
 
         public Identity DefaultIdentity { get; set; }
-
-        public ICollection<Network> Networks => networks;
-
-        public ICollection<Identity> Identities => identities;
 
         public void LoadFromFile(string fileName)
         {
@@ -35,7 +32,7 @@ namespace GigaIRC.Config
 
                 foreach (var net in nets.ByType("network"))
                 {
-                    networks.Add(new Network(net));
+                    Networks.Add(new Network(net));
                 }
             }
 
@@ -51,7 +48,7 @@ namespace GigaIRC.Config
                     .Where(a => a != null)
                     .Where(a => string.Compare(a.TypeName, "identity", StringComparison.OrdinalIgnoreCase) == 0))
                 {
-                    identities.Add(new Identity(ident));
+                    Identities.Add(new Identity(ident));
                 }
             }
         }
@@ -60,10 +57,10 @@ namespace GigaIRC.Config
         {
             var data = new Set();
 
-            var nets = Element.Set(networks.Select(network => network.ToConfigString()));
+            var nets = Element.Set(Networks.Select(network => network.ToConfigString()));
             data.Add(Element.NamedElement("Networks", nets));
 
-            var ids = Element.Set(identities.Select(identity => identity.ToConfigString()));
+            var ids = Element.Set(Identities.Select(identity => identity.ToConfigString()));
             data.Add(Element.NamedElement("Identities", ids));
 
             if (DefaultIdentity != null)
@@ -79,8 +76,8 @@ namespace GigaIRC.Config
         {
             //H:\mIRC\servers.ini
 
-            networks.Clear();
-            identities.Clear();
+            Networks.Clear();
+            Identities.Clear();
             DefaultIdentity = null;
 
             var ini = new IniFile(path);
@@ -96,7 +93,7 @@ namespace GigaIRC.Config
 
                 var net = new Network {Name = network};
 
-                networks.Add(net);
+                Networks.Add(net);
             }
 
             for (int i = 0; ; i++)
@@ -117,12 +114,11 @@ namespace GigaIRC.Config
                 var ports = data[2];
                 var network = data[3];
 
-
-                var net = networks.Find(n => string.Compare(n.Name, network, true) == 0);
+                var net = Networks.FirstOrDefault(n => string.Compare(n.Name, network, true) == 0);
                 if(net == null)
                 {
                     net = new Network {Name = network};
-                    networks.Add(net);
+                    Networks.Add(net);
                 }
 
                 var svr = new Server(net) {DisplayName = name, Address = addr};
@@ -135,12 +131,12 @@ namespace GigaIRC.Config
 
                     if(t.Length==1)
                     {
-                        svr.PortRanges.Add(new Tuple<int, int>(a, a));
+                        svr.PortRangeCollection.Add(new Tuple<int, int>(a, a));
                     }
                     else
                     {
                         var b = int.Parse(t[1]);
-                        svr.PortRanges.Add(new Tuple<int, int>(a, b));
+                        svr.PortRangeCollection.Add(new Tuple<int, int>(a, b));
                     }
                 }
 

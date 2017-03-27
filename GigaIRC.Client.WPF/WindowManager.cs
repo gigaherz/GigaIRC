@@ -6,7 +6,7 @@ using GigaIRC.Protocol;
 
 namespace GigaIRC.Client.WPF
 {
-    internal class WindowManager
+    public class WindowManager
     {
         public Dictionary<Connection, WindowCollection> Connections { get; } = new Dictionary<Connection, WindowCollection>();
 
@@ -17,14 +17,15 @@ namespace GigaIRC.Client.WPF
         public FlexList this[Connection cn, string wndName] => Connections[cn][wndName];
         public FlexList this[string wndName] => OtherWindows[wndName];
 
-        public void Add(FlexList window)
+        public void Add(DockableBase window)
         {
             switch (window.PanelType)
             {
                 case PanelType.Status:
-                    var data = new ConnectionData(window);
+                    var status = (FlexList)window;
+                    var data = new ConnectionData(status);
                     var conn = new WindowCollection(data);
-                    Connections.Add(window.Connection, conn);
+                    Connections.Add(status.Connection, conn);
                     conn.Add(window);
                     Data.Items.Add(data);
                     break;
@@ -34,21 +35,23 @@ namespace GigaIRC.Client.WPF
                     break;
                 case PanelType.Channel:
                 case PanelType.Query:
-                    Connections[window.Connection].Add(window);
+                    var target = (FlexList)window;
+                    Connections[target.Connection].Add(target);
                     break;
                 default:
                     throw new ArgumentOutOfRangeException();
             }
         }
 
-        public void Remove(FlexList window)
+        public void Remove(DockableBase window)
         {
             switch (window.PanelType)
             {
                 case PanelType.Status:
+                    var status = (FlexList)window;
                     WindowCollection data;
-                    Connections.TryGetValue(window.Connection, out data);
-                    Connections.Remove(window.Connection);
+                    Connections.TryGetValue(status.Connection, out data);
+                    Connections.Remove(status.Connection);
                     if(data != null)
                         Data.Items.Remove(data.Data);
                     break;
@@ -58,7 +61,8 @@ namespace GigaIRC.Client.WPF
                     break;
                 case PanelType.Channel:
                 case PanelType.Query:
-                    Connections[window.Connection].Remove(window);
+                    var target = (FlexList)window;
+                    Connections[target.Connection].Remove(window);
                     break;
                 default:
                     throw new ArgumentOutOfRangeException();
@@ -82,7 +86,8 @@ namespace GigaIRC.Client.WPF
 
         public bool TryGetWindow(Connection cn, string id, out FlexList window)
         {
-            return Connections[cn].TryGetWindow(id, out window);
+            window = null;
+            return Connections.TryGetValue(cn, out var connection) && Connections[cn].TryGetWindow(id, out window);
         }
 
         public class WindowCollection
@@ -98,9 +103,11 @@ namespace GigaIRC.Client.WPF
                 Data = data;
             }
 
-            public void Add(FlexList window)
+            public void Add(DockableBase window)
             {
-                Windows.Add(window.WindowId, window);
+                var flex = window as FlexList;
+                if (flex != null)
+                    Windows.Add(flex.WindowId, flex);
 
                 if (Data != null)
                 {
@@ -110,21 +117,23 @@ namespace GigaIRC.Client.WPF
                             Data.OtherWindows.Add(window);
                             break;
                         case PanelType.Status:
-                            Data.StatusWindow = window;
+                            Data.StatusWindow = (FlexList)window;
                             break;
                         case PanelType.Channel:
-                            Data.ChannelWindows.Add(window);
+                            Data.ChannelWindows.Add((FlexList)window);
                             break;
                         case PanelType.Query:
-                            Data.QueryWindows.Add(window);
+                            Data.QueryWindows.Add((FlexList)window);
                             break;
                     }
                 }
             }
 
-            public void Remove(FlexList window)
+            public void Remove(DockableBase window)
             {
-                Windows.Remove(window.WindowId);
+                var flex = window as FlexList;
+                if (flex != null)
+                    Windows.Remove(flex.WindowId);
 
                 if (Data != null)
                 {
@@ -134,7 +143,7 @@ namespace GigaIRC.Client.WPF
                             Data.OtherWindows.Remove(window);
                             break;
                         case PanelType.Status:
-                            Data.StatusWindow = window;
+                            Data.StatusWindow = (FlexList)window;
                             break;
                         case PanelType.Channel:
                             Data.ChannelWindows.Remove(window);

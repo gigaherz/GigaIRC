@@ -8,6 +8,7 @@ namespace GigaIRC.Client.WPF.Tree
     public class GenericItem : INotifyPropertyChanged
     {
         private string _displayName = "";
+        private bool _isExpanded = true;
 
         public string DisplayName
         {
@@ -16,6 +17,17 @@ namespace GigaIRC.Client.WPF.Tree
             {
                 if (value == _displayName) return;
                 _displayName = value;
+                OnPropertyChanged();
+            }
+        }
+
+        public bool IsExpanded
+        {
+            get { return _isExpanded; }
+            set
+            {
+                if (value == _isExpanded) return;
+                _isExpanded = value;
                 OnPropertyChanged();
             }
         }

@@ -92,6 +92,7 @@
     <Compile Include="Protocol\UserInfo.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Protocol\UserList.cs" />
+    <Compile Include="Util\SetCollection.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />

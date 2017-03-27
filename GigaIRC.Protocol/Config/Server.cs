@@ -3,20 +3,74 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using GDDL.Structure;
+using System.Collections.ObjectModel;
+using System.ComponentModel;
+using GigaIRC.Annotations;
+using System.Runtime.CompilerServices;
 
 namespace GigaIRC.Config
 {
-    public class Server
+    public class Server : INotifyPropertyChanged
     {
-        public readonly Network Network;
+        public Network Network { get; }
 
-        public string DisplayName { get; set; }
+        private string _displayName;
+        public string DisplayName
+        {
+            get { return _displayName; }
+            set
+            {
+                if (Equals(value, _displayName)) return;
+                _displayName = value;
+                OnPropertyChanged();
+            }
+        }
 
-        public string Address { get; set; }
+        private string _address;
+        public string Address
+        {
+            get { return _address; }
+            set
+            {
+                if (Equals(value, _address)) return;
+                _address = value;
+                OnPropertyChanged();
+            }
+        }
 
-        public readonly List<Tuple<int, int>> PortRanges = new List<Tuple<int, int>>();
+        public ObservableCollection<Tuple<int, int>> PortRangeCollection { get; } = new ObservableCollection<Tuple<int, int>>();
 
-        public readonly List<Tuple<int, int>> SecurePortRanges = new List<Tuple<int, int>>();
+        public ObservableCollection<Tuple<int, int>> SecurePortRangeCollection { get; } = new ObservableCollection<Tuple<int, int>>();
+
+        public string PortRanges
+        {
+            get { return SerializeRanges(PortRangeCollection); }
+            set
+            {
+                if (Equals(value, SerializeRanges(PortRangeCollection))) return;
+                ParsePortRanges(PortRangeCollection, value);
+                OnPropertyChanged();
+            }
+        }
+
+        public string SecurePortRanges
+        {
+            get { return SerializeRanges(SecurePortRangeCollection); }
+            set
+            {
+                if (Equals(value, SerializeRanges(SecurePortRangeCollection))) return;
+                ParsePortRanges(SecurePortRangeCollection, value);
+                OnPropertyChanged();
+            }
+        }
+
+        public event PropertyChangedEventHandler PropertyChanged;
+
+        [NotifyPropertyChangedInvocator]
+        protected virtual void OnPropertyChanged([CallerMemberName] string propertyName = null)
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+        }
 
         public Server(Network n)
         {
@@ -51,7 +105,7 @@ namespace GigaIRC.Config
                 if (ports == null)
                     throw new InvalidDataException();
 
-                LoadRanges(PortRanges, ports);
+                LoadRanges(PortRangeCollection, ports);
             }
 
             if (svr.TryGetValue("SecurePortRanges", out named))
@@ -60,7 +114,7 @@ namespace GigaIRC.Config
                 if (ports == null)
                     throw new InvalidDataException();
 
-                LoadRanges(PortRanges, ports);
+                LoadRanges(SecurePortRangeCollection, ports);
             }
 
         }
@@ -103,9 +157,9 @@ namespace GigaIRC.Config
             var addr = Element.NamedElement("Address", Element.StringValue(Address));
             el.Add(addr);
 
-            if (PortRanges.Count > 0)
+            if (PortRangeCollection.Count > 0)
             {
-                var ranges = Element.NamedElement("PortRanges", Element.Set(PortRanges.Select(
+                var ranges = Element.NamedElement("PortRanges", Element.Set(PortRangeCollection.Select(
                     a =>
                     a.Item1 == a.Item2
                         ? (Element) Element.IntValue(a.Item1)
@@ -113,9 +167,9 @@ namespace GigaIRC.Config
                 el.Add(ranges);
             }
 
-            if (SecurePortRanges.Count > 0)
+            if (SecurePortRangeCollection.Count > 0)
             {
-                var sranges = Element.NamedElement("SecurePortRanges", Element.Set(SecurePortRanges.Select(
+                var sranges = Element.NamedElement("SecurePortRanges", Element.Set(SecurePortRangeCollection.Select(
                     a =>
                     a.Item1 == a.Item2
                         ? (Element) Element.IntValue(a.Item1)
@@ -127,18 +181,18 @@ namespace GigaIRC.Config
 
         public override string ToString()
         {
-            return $"{DisplayName} ({Address}, {GetPortRanges()})";
+            return $"{DisplayName} ({Address}, {PortRanges})";
         }
 
-        public string GetPortRanges()
+        internal string SerializeRanges(ICollection<Tuple<int, int>> collection)
         {
             return string.Join(", ", 
-                PortRanges.Select(a => a.Item1 == a.Item2
+                collection.Select(a => a.Item1 == a.Item2
                                  ? a.Item1.ToString()
                                  : $"{a.Item1}-{a.Item2}"));
         }
 
-        public bool SetPortRanges(string ports)
+        internal bool ParsePortRanges(ICollection<Tuple<int, int>> collection, string ports)
         {
             var portranges = ports.Split(',');
             var tempList = new List<Tuple<int, int>>();
@@ -160,8 +214,9 @@ namespace GigaIRC.Config
                 tempList.Add(new Tuple<int, int>(a, b));
             }
 
-            PortRanges.Clear();
-            PortRanges.AddRange(tempList);
+            PortRangeCollection.Clear();
+            foreach(var e in tempList)
+                PortRangeCollection.Add(e);
             return true;
         }
     }

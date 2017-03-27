@@ -3,9 +3,7 @@ using System.IO;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
-using System.Threading;
 using System.Threading.Tasks;
-using GigaIRC.Config;
 
 namespace GigaIRC.Protocol
 {
@@ -35,7 +33,7 @@ namespace GigaIRC.Protocol
                 _connection.ChangeState(ConnectionState.Connecting);
 
                 _ircConnection = new TcpClient();
-                await _ircConnection.ConnectAsync(_connection.Server.Address, _connection.Server.PortRanges[0].Item1);
+                await _ircConnection.ConnectAsync(_connection.Server.Address, _connection.Server.PortRangeCollection[0].Item1);
 
                 _connection.UpdateRemote((IPEndPoint)_ircConnection.Client.RemoteEndPoint);
 

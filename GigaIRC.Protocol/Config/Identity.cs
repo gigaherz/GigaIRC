@@ -1,21 +1,83 @@
 ﻿using System;
-using System.Collections.Generic;
 using GDDL.Structure;
-using GigaIRC.Protocol;
+using System.ComponentModel;
+using GigaIRC.Annotations;
+using System.Runtime.CompilerServices;
+using GigaIRC.Util;
 
 namespace GigaIRC.Config
 {
-    public class Identity
+    public class Identity : INotifyPropertyChanged
     {
-        public string DescriptiveName { get; set; }
+        public SetCollection<Network> LinkedNetworks { get; } = new SetCollection<Network>();
 
-        public string FullName { get; set; }
-        public string Username { get; set; }
+        private string _descriptiveName;
+        public string DescriptiveName
+        {
+            get { return _descriptiveName; }
+            set
+            {
+                if (Equals(value, _descriptiveName)) return;
+                _descriptiveName = value;
+                OnPropertyChanged();
+            }
+        }
 
-        public string Nickname { get; set; }
-        public string AltNickname { get; set; }
+        private string _fullName;
+        public string FullName
+        {
+            get { return _fullName; }
+            set
+            {
+                if (Equals(value, _fullName)) return;
+                _fullName = value;
+                OnPropertyChanged();
+            }
+        }
 
-        public readonly HashSet<Network> Networks = new HashSet<Network>();
+        private string _username;
+        public string Username
+        {
+            get { return _username; }
+            set
+            {
+                if (Equals(value, _username)) return;
+                _username = value;
+                OnPropertyChanged();
+            }
+        }
+
+        private string _nickname;
+        public string Nickname
+        {
+            get { return _nickname; }
+            set
+            {
+                if (Equals(value, _nickname)) return;
+                _nickname = value;
+                OnPropertyChanged();
+            }
+        }
+
+        private string _altNickname;
+        public string AltNickname
+        {
+            get { return _altNickname; }
+            set
+            {
+                if (Equals(value, _altNickname)) return;
+                _altNickname = value;
+                OnPropertyChanged();
+            }
+        }
+
+        public event PropertyChangedEventHandler PropertyChanged;
+
+        [NotifyPropertyChangedInvocator]
+        protected virtual void OnPropertyChanged([CallerMemberName] string propertyName = null)
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+        }
 
         public Identity()
         {

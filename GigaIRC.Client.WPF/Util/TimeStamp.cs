@@ -1,9 +1,13 @@
 ﻿using System;
+using System.Diagnostics;
+using System.Text;
+using GigaIRC.Annotations;
 
 namespace GigaIRC.Client.WPF.Util
 {
     public class TimeStamp
     {
+        [StringFormatMethod("format")]
         public static string Format(string format, params object[]args)
         {
             var now = DateTime.Now;

@@ -35,6 +35,8 @@ namespace GigaIRC.Client.WPF.Util
         public static ColorCode ActionOthers { get; set; } = ColorCode.Orange;
         public static ColorCode ActionOwn { get; set; } = ColorCode.Orange;
         public static ColorCode Default { get; set; } = ColorCode.LightGray;
+        public static ColorCode Ctcp { get; set; } = ColorCode.Blue;
+        public static ColorCode CtcpReply { get; set; } = ColorCode.Blue;
 
         public static Brush BackgroundBrush => Brush(Background);
         public static Brush JoinBrush => Brush(Join);

@@ -1,4 +1,5 @@
 ﻿
+using System;
 using System.Windows;
 using System.Windows.Controls;
 using GigaIRC.Client.WPF.Tree;
@@ -8,7 +9,8 @@ namespace GigaIRC.Client.WPF.Dockable
     public partial class SessionTree
     {
         private SessionData _root;
-        
+        private DockableBase _selectedWindow;
+
         public DataTemplateSelector TreeItemsTemplateSelector { get; set; }
 
         public class DefaultDataTemplateSelector : DataTemplateSelector
@@ -28,7 +30,7 @@ namespace GigaIRC.Client.WPF.Dockable
                     return (DataTemplate)_parent.FindResource("ConnectionDataTemplate");
                 if (item is GenericItem)
                     return (DataTemplate)_parent.FindResource("GenericItemDataTemplate");
-                if (item is FlexList)
+                if (item is DockableBase)
                     return (DataTemplate)_parent.FindResource("WindowDataTemplate");
                 return null;
             }
@@ -45,6 +47,17 @@ namespace GigaIRC.Client.WPF.Dockable
             }
         }
 
+        public DockableBase SelectedWindow
+        {
+            get { return _selectedWindow; }
+            set
+            {
+                if (Equals(value, _selectedWindow)) return;
+                _selectedWindow = value;
+                OnPropertyChanged();
+            }
+        }
+
         public SessionTree()
         {
             TreeItemsTemplateSelector = new DefaultDataTemplateSelector(this);
@@ -52,6 +65,15 @@ namespace GigaIRC.Client.WPF.Dockable
             InitializeComponent();
 
             Title = "Session";
+        }
+
+        private void TreeView_OnSelectedItemChanged(object sender, RoutedPropertyChangedEventArgs<object> e)
+        {
+            var status = e.NewValue as ConnectionData;
+            if (status != null)
+                SelectedWindow = status.StatusWindow;
+            else
+                SelectedWindow = e.NewValue as DockableBase;
         }
     }
 }

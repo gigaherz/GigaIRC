@@ -1,17 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
 using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
 
 namespace GigaIRC.Client.WPF.Dockable
 {
@@ -64,14 +52,10 @@ namespace GigaIRC.Client.WPF.Dockable
         {
             if (e.PropertyName == nameof(Browser.DocumentTitle))
             {
-                if (!string.IsNullOrEmpty(Browser.DocumentTitle))
-                {
-                    Title = Browser.DocumentTitle;
-                }
-                else
-                {
-                    Title =  Browser.Source?.ToString() ?? "Blank Page";
-                }
+                Title = string.Format("Browser: {0}",
+                    string.IsNullOrEmpty(Browser.DocumentTitle) 
+                        ? Browser.Source?.ToString() ?? "Blank Page"
+                        : Browser.DocumentTitle);
             }
             else if (e.PropertyName == nameof(Browser.Source))
             {

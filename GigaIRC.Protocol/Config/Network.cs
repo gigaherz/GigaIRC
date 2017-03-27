@@ -3,18 +3,60 @@ using System.IO;
 using System.Linq;
 using GDDL.Structure;
 using GigaIRC.Protocol;
+using System.Collections.ObjectModel;
+using System.ComponentModel;
+using GigaIRC.Annotations;
+using System.Runtime.CompilerServices;
 
 namespace GigaIRC.Config
 {
-    public class Network
+    public class Network : INotifyPropertyChanged
     {
-        public string Name { get; set; }
+        public ObservableCollection<Server> Servers { get; } = new ObservableCollection<Server>();
 
-        public readonly List<Server> Servers = new List<Server>();
+        private string _name;
+        public string Name
+        {
+            get { return _name; }
+            set
+            {
+                if (Equals(value, _name)) return;
+                _name = value;
+                OnPropertyChanged();
+            }
+        }
 
-        public string Password { get; set; }
+        private string _password;
+        public string Password
+        {
+            get { return _password; }
+            set
+            {
+                if (Equals(value, _password)) return;
+                _password = value;
+                OnPropertyChanged();
+            }
+        }
+        
+        private Identity _defaultIdentity;
+        public Identity DefaultIdentity
+        {
+            get { return _defaultIdentity; }
+            set
+            {
+                if (ReferenceEquals(value, _defaultIdentity)) return;
+                _defaultIdentity = value;
+                OnPropertyChanged();
+            }
+        }
 
-        public Identity DefaultIdentity { get; set; }
+        public event PropertyChangedEventHandler PropertyChanged;
+
+        [NotifyPropertyChangedInvocator]
+        protected virtual void OnPropertyChanged([CallerMemberName] string propertyName = null)
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+        }
 
         public Network()
         {

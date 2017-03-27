@@ -31,9 +31,15 @@
             </Grid.RowDefinitions>
 
             <Label Content="Networks"/>
-            <ListBox Grid.Row="1" Width="160" Margin="0,0,0,4" 
+            <ListBox x:Name="NetworksList" Grid.Row="1" Width="160" Margin="0,0,0,4" 
                      ItemsSource="{Binding Networks}" 
-                     SelectedItem="{Binding SelectedNetwork, Mode=TwoWay, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type local:Networks}}}" />
+                     SelectedItem="{Binding SelectedNetwork, Mode=TwoWay, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type local:Networks}}}">
+                <ListBox.ItemTemplate>
+                    <DataTemplate>
+                        <TextBlock Text="{Binding Name}" />
+                    </DataTemplate>
+                </ListBox.ItemTemplate>
+            </ListBox>
 
             <Grid Grid.Row="2">
                 <Grid.ColumnDefinitions>
@@ -41,8 +47,8 @@
                     <ColumnDefinition Width="1*"/>
                 </Grid.ColumnDefinitions>
 
-                <Button Content="New" Margin="0,0,4,0" />
-                <Button Content="Remove" Grid.Column="1" Margin="0" />
+                <Button Content="New" Margin="0,0,4,0" Command="{Binding NewNetworkCommand, Mode=OneWay, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type local:Networks}}}" />
+                <Button Content="Remove" Grid.Column="1" Margin="0" Command="{Binding RemoveNetworkCommand, Mode=OneWay, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type local:Networks}}}" />
             </Grid>
         </Grid>
 
@@ -60,7 +66,7 @@
                     </Grid.ColumnDefinitions>
 
                     <Label Content="Network name:" />
-                    <TextBox Grid.Column="1" Margin="4,0,0,0" VerticalAlignment="Center" Text="{Binding Name}" />
+                    <TextBox x:Name="NetworkNameBox" Grid.Column="1" Margin="4,0,0,0" VerticalAlignment="Center" Text="{Binding Name}" />
                 </Grid>
                 <Grid Grid.Row="1">
                     <Grid.ColumnDefinitions>
@@ -76,9 +82,15 @@
                         </Grid.RowDefinitions>
 
                         <Label Content="Servers" />
-                        <ListBox Grid.Row="1" Width="160" Margin="0,0,0,4"
+                        <ListBox x:Name="ServersList" Grid.Row="1" Width="160" Margin="0,0,0,4"
                                  ItemsSource="{Binding Servers}" 
-                                 SelectedItem="{Binding SelectedServer, Mode=TwoWay, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type local:Networks}}}" />
+                                 SelectedItem="{Binding SelectedServer, Mode=TwoWay, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type local:Networks}}}">
+                            <ListBox.ItemTemplate>
+                                <DataTemplate>
+                                    <TextBlock Text="{Binding DisplayName}" />
+                                </DataTemplate>
+                            </ListBox.ItemTemplate>
+                        </ListBox>
 
                         <Grid Grid.Row="2">
                             <Grid.ColumnDefinitions>
@@ -86,8 +98,8 @@
                                 <ColumnDefinition Width="1*"/>
                             </Grid.ColumnDefinitions>
 
-                            <Button Content="New" Margin="0,0,4,0" />
-                            <Button Content="Remove" Grid.Column="1" Margin="0" />
+                            <Button Content="New" Margin="0,0,4,0" Command="{Binding NewServerCommand, Mode=OneWay, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type local:Networks}}}" />
+                            <Button Content="Remove" Grid.Column="1" Margin="0" Command="{Binding RemoveServerCommand, Mode=OneWay, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type local:Networks}}}" />
                         </Grid>
                     </Grid>
 
@@ -108,7 +120,7 @@
                             </Grid.RowDefinitions>
 
                             <Label Content="Server name:" Grid.Row="0" />
-                            <TextBox Grid.Row="1" Margin="0,0,0,4" Text="{Binding DisplayName}" />
+                            <TextBox x:Name="ServerNameBox" Grid.Row="1" Margin="0,0,0,4" Text="{Binding DisplayName}" />
 
                             <Label Content="Address:" Grid.Row="2" />
                             <TextBox Grid.Row="3" Margin="0,0,0,4" Text="{Binding Address}" />

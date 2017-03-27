@@ -11,8 +11,8 @@ namespace GigaIRC.Config
 {
     public class Settings
     {
-        private ObservableCollection<Network> Networks { get; } = new ObservableCollection<Network>();
-        private ObservableCollection<Identity> Identities { get; } = new ObservableCollection<Identity>();
+        public ObservableCollection<Network> Networks { get; } = new ObservableCollection<Network>();
+        public ObservableCollection<Identity> Identities { get; } = new ObservableCollection<Identity>();
 
         public Identity DefaultIdentity { get; set; }
 

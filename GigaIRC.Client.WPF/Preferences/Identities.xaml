@@ -31,7 +31,15 @@
             </Grid.RowDefinitions>
 
             <Label Content="Identities"/>
-            <ListBox Grid.Row="1" MinWidth="160" Margin="0,0,0,4" ItemsSource="{Binding Identities}" />
+            <ListBox x:Name="IdentitiesList" Grid.Row="1" MinWidth="160" Margin="0,0,0,4" 
+                     ItemsSource="{Binding Identities}"
+                     SelectedItem="{Binding SelectedIdentity, Mode=TwoWay, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type local:Identities}}}">
+                <ListBox.ItemTemplate>
+                    <DataTemplate>
+                        <TextBlock Text="{Binding DescriptiveName}" />
+                    </DataTemplate>
+                </ListBox.ItemTemplate>
+            </ListBox>
 
             <Grid Grid.Row="2">
                 <Grid.ColumnDefinitions>
@@ -39,13 +47,44 @@
                     <ColumnDefinition Width="1*"/>
                 </Grid.ColumnDefinitions>
 
-                <Button Content="New" Margin="0,0,4,0" />
-                <Button Content="Remove" Grid.Column="1" Margin="0" />
+                <Button Content="New" Margin="0,0,4,0" Command="{Binding NewIdentityCommand, Mode=OneWay, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type local:Identities}}}" />
+                <Button Content="Remove" Grid.Column="1" Margin="0" Command="{Binding RemoveIdentityCommand, Mode=OneWay, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type local:Identities}}}" />
             </Grid>
         </Grid>
 
-        <GroupBox Grid.Column="1" Header="Identity Properties">
-            
+        <GroupBox Grid.Column="1" Header="Identity Properties"
+                  DataContext="{Binding SelectedIdentity, Mode=OneWay, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type local:Identities}}}">
+            <Grid Margin="0,4,0,0">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+
+                <Label Content="Descriptive Name:" Grid.Row="0" />
+                <TextBox x:Name="NameBox" Grid.Row="1" Margin="0,0,0,4" Text="{Binding DescriptiveName}" />
+
+                <Label Content="Full Name:" Grid.Row="2" />
+                <TextBox Grid.Row="3" Margin="0,0,0,4" Text="{Binding FullName}" />
+
+                <Label Content="Username:" Grid.Row="4" />
+                <TextBox Grid.Row="5" Margin="0,0,0,4" Text="{Binding Username}" />
+
+                <Label Content="Nickname:" Grid.Row="6" />
+                <TextBox Grid.Row="7" Margin="0,0,0,4" Text="{Binding Nickname}" />
+
+                <Label Content="Alternate (Backup) Nickname:" Grid.Row="8" />
+                <TextBox Grid.Row="9" Margin="0,0,0,4" Text="{Binding AltNickname}" />
+
+            </Grid>
         </GroupBox>
     </Grid>
 </local:PreferencesPage>

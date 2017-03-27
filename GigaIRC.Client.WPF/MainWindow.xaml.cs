@@ -180,6 +180,12 @@ namespace GigaIRC.Client.WPF
             DockingManager.ActiveContent = _preferences;
         }
 
+        public RelayCommand SaveSettingsCommand => new RelayCommand(_ => SaveSettings());
+        private void SaveSettings()
+        {
+            Session.Settings.SaveToFile(@"settings.cfg");
+        }
+
         public RelayCommand ShowDebugCommand => new RelayCommand(_ => ShowDebug());
         private void ShowDebug()
         {

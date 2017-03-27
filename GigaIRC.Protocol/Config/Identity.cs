@@ -4,6 +4,7 @@ using System.ComponentModel;
 using GigaIRC.Annotations;
 using System.Runtime.CompilerServices;
 using GigaIRC.Util;
+using System.IO;
 
 namespace GigaIRC.Config
 {
@@ -85,12 +86,76 @@ namespace GigaIRC.Config
 
         public Identity(Set ident)
         {
-            throw new NotImplementedException();
+            if (ident.TryGetValue("DescriptiveName", out var named))
+            {
+                var name = named as Value;
+                if (name == null)
+                    throw new InvalidDataException();
+
+                DescriptiveName = name.String;
+            }
+
+            if (ident.TryGetValue("FullName", out var fulld))
+            {
+                var fullname = fulld as Value;
+                if (fullname == null)
+                    throw new InvalidDataException();
+
+                FullName = fullname.String;
+            }
+
+            if (ident.TryGetValue("Username", out var userd))
+            {
+                var username = userd as Value;
+                if (username == null)
+                    throw new InvalidDataException();
+
+                Username = username.String;
+            }
+
+            if (ident.TryGetValue("Nickname", out var nickd))
+            {
+                var nick = nickd as Value;
+                if (nick == null)
+                    throw new InvalidDataException();
+
+                Nickname = nick.String;
+            }
+
+            if (ident.TryGetValue("AltNickname", out var altd))
+            {
+                var alt = altd as Value;
+                if (alt == null)
+                    throw new InvalidDataException();
+
+                AltNickname = alt.String;
+            }
         }
 
         internal Element ToConfigString()
         {
-            throw new NotImplementedException();
+            var el = new Set("identity");
+
+            el.Add(Element.NamedElement("DescriptiveName", Element.StringValue(DescriptiveName)));
+            el.Add(Element.NamedElement("FullName", Element.StringValue(FullName)));
+            el.Add(Element.NamedElement("Username", Element.StringValue(Username)));
+            el.Add(Element.NamedElement("Nickname", Element.StringValue(Nickname)));
+            el.Add(Element.NamedElement("AltNickname", Element.StringValue(AltNickname)));
+
+            return el;
+        }
+
+        public override string ToString()
+        {
+            if (string.IsNullOrEmpty(DescriptiveName))
+            {
+                if (string.IsNullOrEmpty(Nickname))
+                    return "(Unnamed)";
+                return Nickname;
+            }
+            if (DescriptiveName != Nickname && !string.IsNullOrEmpty(Nickname))
+                return string.Format("{0} ({1})", DescriptiveName, Nickname);
+            return DescriptiveName;
         }
     }
 }

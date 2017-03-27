@@ -64,9 +64,7 @@ namespace GigaIRC.Config
 
         public Network(Set net)
         {
-            Element named;
-
-            if (net.TryGetValue("Name", out named))
+            if (net.TryGetValue("Name", out var named))
             {
                 var name = named as Value;
                 if (name == null)
@@ -75,7 +73,7 @@ namespace GigaIRC.Config
                 Name = name.String;
             }
 
-            if (net.TryGetValue("Password", out named))
+            if (net.TryGetValue("Password", out var passd))
             {
                 var pass = named as Value;
                 if (pass == null)
@@ -84,9 +82,9 @@ namespace GigaIRC.Config
                 Password = pass.String;
             }
 
-            if (net.TryGetValue("DefaultIdentity", out named))
+            if (net.TryGetValue("DefaultIdentity", out var idd))
             {
-                //var name = named as ValueElement;
+                //var name = idd as ValueElement;
                 //if (name == null)
                 //    throw new InvalidDataException();
 
@@ -103,14 +101,8 @@ namespace GigaIRC.Config
         {
             var el = new Set("network");
 
-            var name = Element.NamedElement("Name", Element.StringValue(Name));
-            el.Add(name);
-
-            if (Password != null)
-            {
-                var password = Element.NamedElement("Password", Element.StringValue(Password));
-                el.Add(password);
-            }
+            el.Add(Element.NamedElement("Name", Element.StringValue(Name)));
+            el.Add(Element.NamedElement("Password", Element.StringValue(Password)));
 
             if (DefaultIdentity != null)
             {

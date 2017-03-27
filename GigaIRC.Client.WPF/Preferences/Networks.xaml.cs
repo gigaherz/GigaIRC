@@ -1,5 +1,7 @@
 ﻿using GigaIRC.Config;
+using System;
 using System.ComponentModel;
+using System.Windows.Input;
 
 namespace GigaIRC.Client.WPF.Preferences
 {
@@ -29,6 +31,42 @@ namespace GigaIRC.Client.WPF.Preferences
                 _selectedServer = value;
                 OnPropertyChanged();
             }
+        }
+
+        public RelayCommand NewNetworkCommand => new RelayCommand(_ => NewNetwork());
+        private void NewNetwork()
+        {
+            var network = new Network();
+            Settings.Networks.Add(network);
+            SelectedNetwork = network;
+            NetworksList.ScrollIntoView(SelectedNetwork);
+            Dispatcher.BeginInvoke(new Action(() => {
+                Keyboard.Focus(NetworkNameBox);
+            }));
+        }
+
+        public RelayCommand RemoveNetworkCommand => new RelayCommand(_ => RemoveNetwork());
+        private void RemoveNetwork()
+        {
+            Settings.Networks.Remove(SelectedNetwork);
+        }
+
+        public RelayCommand NewServerCommand => new RelayCommand(_ => NewServer());
+        private void NewServer()
+        {
+            var server = new Server(SelectedNetwork);
+            SelectedNetwork.Servers.Add(server);
+            SelectedServer = server;
+            ServersList.ScrollIntoView(SelectedServer);
+            Dispatcher.BeginInvoke(new Action(() => {
+                Keyboard.Focus(ServerNameBox);
+            }));
+        }
+
+        public RelayCommand RemoveServerCommand => new RelayCommand(_ => RemoveServer());
+        private void RemoveServer()
+        {
+            SelectedNetwork.Servers.Remove(SelectedServer);
         }
 
         public Networks()

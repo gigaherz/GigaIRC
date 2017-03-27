@@ -36,6 +36,7 @@
             </MenuItem>
             <MenuItem Header="Options">
                 <MenuItem Header="Preferences..." Command="{Binding OpenPreferencesCommand}"/>
+                <MenuItem Header="Save Settings" Command="{Binding SaveSettingsCommand}"/>
             </MenuItem>
         </Menu>
         <ToolBarTray Grid.Row="1">

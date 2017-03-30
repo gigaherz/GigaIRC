@@ -65,7 +65,7 @@ namespace GigaIRC.Config
 
             if (DefaultIdentity != null)
             {
-                var def = Element.Backreference(true, $"identities:{DefaultIdentity.Nickname}");
+                var def = Element.Backreference(true, $"identities:{DefaultIdentity.NicknameList[0]}");
                 data.Add(Element.NamedElement("DefaultIdentity", def));
             }
 

@@ -249,9 +249,12 @@ namespace GigaIRC.Client.WPF
                 {
                     FullName = wnd.FullName,
                     Username = wnd.Username,
-                    Nickname = wnd.Nickname,
-                    AltNickname = wnd.AltNickname,
                 };
+
+                if (!string.IsNullOrEmpty(wnd.Nickname))
+                    id.NicknameList.Add(wnd.Nickname);
+                if (!string.IsNullOrEmpty(wnd.AltNickname))
+                    id.NicknameList.Add(wnd.AltNickname);
 
                 var svr = new Server(new Network { Name = "Test" })
                 {

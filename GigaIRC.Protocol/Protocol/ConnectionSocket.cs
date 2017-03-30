@@ -51,7 +51,7 @@ namespace GigaIRC.Protocol
                 await SendLine("USER " + _connection.Identity.Username + " "
                     + _connection.Identity.Username + " * :"
                     + _connection.Identity.FullName);
-                await Register(_connection.Identity.Nickname);
+                await Register(_connection.Identity.NicknameList[0]);
 
                 _connection.ChangeState(ConnectionState.WaitingMOTD);
 
@@ -91,7 +91,7 @@ namespace GigaIRC.Protocol
 
         internal async Task Register(string nickname)
         {
-            await SendLine("NICK " + _connection.Identity.Nickname);
+            await SendLine("NICK " + _connection.Identity.NicknameList[0]);
             _logger.LogLine(1, "Awaiting reply...");
         }
 

@@ -63,9 +63,6 @@
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="Auto"/>
                     <RowDefinition Height="*"/>
                 </Grid.RowDefinitions>
 
@@ -78,11 +75,8 @@
                 <Label Content="Username:" Grid.Row="4" />
                 <TextBox Grid.Row="5" Margin="0,0,0,4" Text="{Binding Username}" />
 
-                <Label Content="Nickname:" Grid.Row="6" />
-                <TextBox Grid.Row="7" Margin="0,0,0,4" Text="{Binding Nickname}" />
-
-                <Label Content="Alternate (Backup) Nickname:" Grid.Row="8" />
-                <TextBox Grid.Row="9" Margin="0,0,0,4" Text="{Binding AltNickname}" />
+                <Label Content="Nicknames (one per line):" Grid.Row="6" />
+                <TextBox Grid.Row="7" Margin="0,0,0,4" Text="{Binding Nicknames, UpdateSourceTrigger=LostFocus}" AcceptsReturn="True" />
 
             </Grid>
         </GroupBox>

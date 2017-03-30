@@ -5,6 +5,8 @@ using GigaIRC.Annotations;
 using System.Runtime.CompilerServices;
 using GigaIRC.Util;
 using System.IO;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace GigaIRC.Config
 {
@@ -48,26 +50,19 @@ namespace GigaIRC.Config
             }
         }
 
-        private string _nickname;
-        public string Nickname
-        {
-            get { return _nickname; }
-            set
-            {
-                if (Equals(value, _nickname)) return;
-                _nickname = value;
-                OnPropertyChanged();
-            }
-        }
+        public SetCollection<string> NicknameList { get; } = new SetCollection<string>();
 
-        private string _altNickname;
-        public string AltNickname
+        public string Nicknames
         {
-            get { return _altNickname; }
+            get { return string.Join(Environment.NewLine, NicknameList); }
             set
             {
-                if (Equals(value, _altNickname)) return;
-                _altNickname = value;
+                if (Equals(value, string.Join(Environment.NewLine, NicknameList))) return;
+                NicknameList.Clear();
+                foreach(var nn in value.Split(new[] { Environment.NewLine }, StringSplitOptions.RemoveEmptyEntries))
+                {
+                    NicknameList.Add(nn);
+                }
                 OnPropertyChanged();
             }
         }
@@ -88,8 +83,7 @@ namespace GigaIRC.Config
         {
             if (ident.TryGetValue("DescriptiveName", out var named))
             {
-                var name = named as Value;
-                if (name == null)
+                if (!(named is Value name))
                     throw new InvalidDataException();
 
                 DescriptiveName = name.String;
@@ -97,8 +91,7 @@ namespace GigaIRC.Config
 
             if (ident.TryGetValue("FullName", out var fulld))
             {
-                var fullname = fulld as Value;
-                if (fullname == null)
+                if (!(fulld is Value fullname))
                     throw new InvalidDataException();
 
                 FullName = fullname.String;
@@ -106,55 +99,48 @@ namespace GigaIRC.Config
 
             if (ident.TryGetValue("Username", out var userd))
             {
-                var username = userd as Value;
-                if (username == null)
+                if (!(userd is Value username))
                     throw new InvalidDataException();
 
                 Username = username.String;
             }
 
-            if (ident.TryGetValue("Nickname", out var nickd))
+            if (ident.TryGetValue("Nicknames", out var nickd))
             {
-                var nick = nickd as Value;
-                if (nick == null)
+                if (!(nickd is Set nickList))
                     throw new InvalidDataException();
 
-                Nickname = nick.String;
-            }
+                foreach (var entry in nickList)
+                {
+                    if (!(entry is Value nick))
+                        throw new InvalidDataException();
 
-            if (ident.TryGetValue("AltNickname", out var altd))
-            {
-                var alt = altd as Value;
-                if (alt == null)
-                    throw new InvalidDataException();
-
-                AltNickname = alt.String;
+                    NicknameList.Add(nick.String);
+                }
             }
         }
 
         internal Element ToConfigString()
         {
-            var el = new Set("identity");
-
-            el.Add(Element.NamedElement("DescriptiveName", Element.StringValue(DescriptiveName)));
-            el.Add(Element.NamedElement("FullName", Element.StringValue(FullName)));
-            el.Add(Element.NamedElement("Username", Element.StringValue(Username)));
-            el.Add(Element.NamedElement("Nickname", Element.StringValue(Nickname)));
-            el.Add(Element.NamedElement("AltNickname", Element.StringValue(AltNickname)));
-
-            return el;
+            return new Set("identity")
+            {
+                Element.NamedElement("DescriptiveName", Element.StringValue(DescriptiveName)),
+                Element.NamedElement("FullName", Element.StringValue(FullName)),
+                Element.NamedElement("Username", Element.StringValue(Username)),
+                Element.NamedElement("Nicknames", Element.Set(NicknameList.Select(Element.StringValue).ToArray()))
+            };
         }
 
         public override string ToString()
         {
             if (string.IsNullOrEmpty(DescriptiveName))
             {
-                if (string.IsNullOrEmpty(Nickname))
+                if (NicknameList.Count == 0)
                     return "(Unnamed)";
-                return Nickname;
+                return NicknameList[0];
             }
-            if (DescriptiveName != Nickname && !string.IsNullOrEmpty(Nickname))
-                return string.Format("{0} ({1})", DescriptiveName, Nickname);
+            if (NicknameList.Count > 0 && DescriptiveName != NicknameList[0])
+                return string.Format("{0} ({1})", DescriptiveName, NicknameList[0]);
             return DescriptiveName;
         }
     }

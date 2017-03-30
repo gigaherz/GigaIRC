@@ -31,7 +31,7 @@ namespace GigaIRC.Protocol
         public readonly Server Server;
         public readonly Identity Identity;
 
-        private bool _firstNicknameFailed;
+        private int _lastAttemptedNicknameIndex;
         private bool _namesUpdateInProgress;
         private ConnectionState _state;
         private string _network;
@@ -414,15 +414,15 @@ namespace GigaIRC.Protocol
             else if (cmd.CmdText == "433")
             {
                 // nick in use
-                if (_firstNicknameFailed)
+                if (_lastAttemptedNicknameIndex >= Identity.NicknameList.Count)
                 {
                     // give up
                     Close();
                 }
                 else
                 {
-                    _firstNicknameFailed = true;
-                    await _connectionSocket.Register(Identity.AltNickname);
+                    _lastAttemptedNicknameIndex++;
+                    await _connectionSocket.Register(Identity.NicknameList[_lastAttemptedNicknameIndex]);
                 }
             }
             else if (cmd.CmdText == "302")

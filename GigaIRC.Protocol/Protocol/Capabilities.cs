@@ -7,64 +7,64 @@ namespace GigaIRC.Protocol
 {
     public class Capabilities
     {
-        private readonly Connection parent;
+        private readonly Connection _parent;
 
-        private readonly List<string> supported = new List<string>();
-        private readonly List<string> accepted = new List<string>();
+        private readonly List<string> _supported = new List<string>();
+        private readonly List<string> _accepted = new List<string>();
 
-        private string authenticationMechanism = "PLAIN";
+        private readonly string _authenticationMechanism = "PLAIN";
 
         public Capabilities(Connection parent)
         {
-            this.parent = parent;
+            this._parent = parent;
         }
 
         public void CapabilityResponse(Command cmd)
         {
             if (cmd.Params.Count > 1 && cmd.Params[1] == "LS")
             {
-                supported.Clear();
-                accepted.Clear();
-                supported.AddRange(cmd.Params.Last().ToLowerInvariant().Split(' '));
+                _supported.Clear();
+                _accepted.Clear();
+                _supported.AddRange(cmd.Params.Last().ToLowerInvariant().Split(' '));
 
                 var capsRequest = new List<string>();
 
-                if (supported.Contains("multi-prefix"))
+                if (_supported.Contains("multi-prefix"))
                 {
                     capsRequest.Add("multi-prefix");
                 }
 
-                if (supported.Contains("sasl") && !string.IsNullOrEmpty(parent.NetworkIdentity?.SaslUsername))
+                if (_supported.Contains("sasl") && !string.IsNullOrEmpty(_parent.NetworkIdentity?.SaslUsername))
                 {
                     capsRequest.Add("sasl");
                 }
 
                 if (capsRequest.Count > 0)
                 {
-                    parent.SendLine("CAP REQ :" + string.Join(" ", capsRequest));
+                    _parent.SendLine("CAP REQ :" + string.Join(" ", capsRequest));
                 }
                 else
                 {
-                    parent.SendLine("CAP END");
+                    _parent.SendLine("CAP END");
                 }
             }
             else if (cmd.Params.Count > 1 && cmd.Params[1] == "ACK")
             {
-                accepted.Clear();
-                accepted.AddRange(cmd.Params.Last().ToLowerInvariant().Split(' '));
+                _accepted.Clear();
+                _accepted.AddRange(cmd.Params.Last().ToLowerInvariant().Split(' '));
 
-                if (accepted.Contains("sasl") && !string.IsNullOrEmpty(parent.NetworkIdentity?.SaslUsername))
+                if (_accepted.Contains("sasl") && !string.IsNullOrEmpty(_parent.NetworkIdentity?.SaslUsername))
                 {
-                    parent.SendLine("AUTHENTICATE " + authenticationMechanism);
+                    _parent.SendLine("AUTHENTICATE " + _authenticationMechanism);
                 }
                 else
                 {
-                    parent.SendLine("CAP END");
+                    _parent.SendLine("CAP END");
                 }
             }
             else if (cmd.Params.Count > 1 && cmd.Params[1] == "NAK")
             {
-                accepted.RemoveAll(cmd.Params.Last().ToLowerInvariant().Split(' ').ToList().Contains);
+                _accepted.RemoveAll(cmd.Params.Last().ToLowerInvariant().Split(' ').ToList().Contains);
             }
         }
 
@@ -72,7 +72,7 @@ namespace GigaIRC.Protocol
         {
             if (cmd.Params.Count > 1 && cmd.Params[1] == "+")
             {
-                parent.SendLine("AUTHENTICATE " + EncodeSaslPlain(parent.NetworkIdentity.SaslUsername, parent.NetworkIdentity.SaslPassword));
+                _parent.SendLine("AUTHENTICATE " + EncodeSaslPlain(_parent.NetworkIdentity.SaslUsername, _parent.NetworkIdentity.SaslPassword));
             }
         }
 

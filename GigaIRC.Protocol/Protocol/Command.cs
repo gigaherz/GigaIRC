@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Text;
 
 namespace GigaIRC.Protocol
 {
@@ -86,28 +87,35 @@ namespace GigaIRC.Protocol
 
         public override string ToString()
         {
-            string uinf = From.ToString();
-            string cmd = "";
-            if (uinf.Length > 0) cmd = ":" + uinf + " ";
+            var uinf = From.ToString();
+            var cmd = new StringBuilder();
 
-            cmd += CmdText;
-
-            for (int i = 0; i < Params.Count - 1; i++)
+            if (uinf.Length > 0)
             {
-                cmd += " " + Params[i].Replace(' ', '_');
+                cmd.AppendFormat(":{0} ", uinf);
             }
 
-            string text = Params[Params.Count - 1];
+            cmd.Append(CmdText);
+
+            for (var i = 0; i < Params.Count - 1; i++)
+            {
+                cmd.Append(" ");
+                cmd.Append(Params[i].Replace(' ', '_'));
+            }
+
+            var text = Params[Params.Count - 1];
             if (text.IndexOf(' ') >= 0)
             {
-                cmd += " :" + text;
+                cmd.Append(" :");
+                cmd.Append(text);
             }
             else
             {
-                cmd += " " + text;
+                cmd.Append(" ");
+                cmd.Append(text);
             }
 
-            return cmd;
+            return cmd.ToString();
         }
 
         public bool Is(string p)

@@ -9,6 +9,9 @@ using System.Windows.Input;
 using GigaIRC.Client.WPF.Util;
 using GigaIRC.Protocol;
 using GigaIRC.Util;
+using System.Text.RegularExpressions;
+using System.Windows.Threading;
+using System.Diagnostics;
 
 namespace GigaIRC.Client.WPF.Dockable
 {
@@ -28,11 +31,26 @@ namespace GigaIRC.Client.WPF.Dockable
         private bool _showTopicInfo = false;
         private object _itemsSource;
         private GridLength _listWidth = new GridLength(120);
+        private Regex _nicknamesRegex;
+        private bool _matchListItemsInText = false;
 
         public ICommand ListItemDoubleClickCommand { get; set; }
         public ICommand LinkClickedCommand { get; set; }
 
         public DataTemplateSelector ListItemsTemplateSelector { get; set; }
+
+        public bool MatchListItemsInText
+        {
+            get { return _matchListItemsInText; }
+            set
+            {
+                _matchListItemsInText = value;
+                if (!value)
+                    _nicknamesRegex = null;
+                else
+                    ListItems_CollectionChanged(null, null);
+            }
+        }
 
         public class DefaultDataTemplateSelector : DataTemplateSelector
         {
@@ -204,10 +222,25 @@ namespace GigaIRC.Client.WPF.Dockable
             _content.Blocks.Clear();
 
             MainContent.IsDocumentEnabled = true;
+
+            _nicknamesRegex = null;
+            ListItems.CollectionChanged += ListItems_CollectionChanged;
+        }
+
+        private void ListItems_CollectionChanged(object sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
+        {
+            if (_matchListItemsInText)
+                _nicknamesRegex = new Regex("\b(" + string.Join("|", ListItems) + ")\b", RegexOptions.IgnoreCase);
         }
 
         private void OnLinkClicked(object obj)
         {
+            if (obj is Uri uri && uri.Scheme == "list-item-select")
+            {
+                Debug.WriteLine(uri);
+                return;
+            }
+
             if (LinkClickedCommand != null && LinkClickedCommand.CanExecute(obj))
             {
                 LinkClickedCommand.Execute(obj);
@@ -232,7 +265,7 @@ namespace GigaIRC.Client.WPF.Dockable
 
             Dispatcher.BeginInvoke(new Action(() =>
             {
-                _content.Blocks.Add(LineToParagraphConverter.ToParagraph(line, new RelayCommand(OnLinkClicked)));
+                _content.Blocks.Add(LineToParagraphConverter.ToParagraph(line, new RelayCommand(OnLinkClicked), _nicknamesRegex));
 
                 //if(shouldScroll)
                 MainContent.ScrollToEnd();
@@ -251,12 +284,12 @@ namespace GigaIRC.Client.WPF.Dockable
             {
                 if (before == _content.Blocks.Count)
                 {
-                    _content.Blocks.Add(LineToParagraphConverter.ToParagraph(line, new RelayCommand(OnLinkClicked)));
+                    _content.Blocks.Add(LineToParagraphConverter.ToParagraph(line, new RelayCommand(OnLinkClicked), _nicknamesRegex));
                 }
                 else
                 {
                     var after = _content.Blocks.ElementAt(before);
-                    _content.Blocks.InsertBefore(after, LineToParagraphConverter.ToParagraph(line, new RelayCommand(OnLinkClicked)));
+                    _content.Blocks.InsertBefore(after, LineToParagraphConverter.ToParagraph(line, new RelayCommand(OnLinkClicked), _nicknamesRegex));
                 }
             }));
         }
@@ -272,7 +305,7 @@ namespace GigaIRC.Client.WPF.Dockable
             Dispatcher.BeginInvoke(new Action(() =>
             {
                 var at = _content.Blocks.ElementAt(number);
-                LineToParagraphConverter.ToParagraph(line, new RelayCommand(OnLinkClicked), (Paragraph)at);
+                LineToParagraphConverter.ToParagraph(line, new RelayCommand(OnLinkClicked), _nicknamesRegex, (Paragraph)at);
             }));
         }
 

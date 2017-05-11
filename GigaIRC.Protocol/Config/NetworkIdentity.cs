@@ -9,7 +9,7 @@ namespace GigaIRC.Config
         private Identity _identity;
         public Identity Identity
         {
-            get { return _identity; }
+            get => _identity;
             set
             {
                 if (ReferenceEquals(value, _identity)) return;
@@ -21,7 +21,7 @@ namespace GigaIRC.Config
         private Network _network;
         public Network Network
         {
-            get { return _network; }
+            get => _network;
             set
             {
                 if (ReferenceEquals(value, _network)) return;
@@ -33,7 +33,7 @@ namespace GigaIRC.Config
         private string _saslUsername;
         public string SaslUsername
         {
-            get { return _saslUsername; }
+            get => _saslUsername;
             set
             {
                 if (Equals(value, _saslUsername)) return;
@@ -45,7 +45,7 @@ namespace GigaIRC.Config
         private string _saslPassword;
         public string SaslPassword
         {
-            get { return _saslPassword; }
+            get => _saslPassword;
             set
             {
                 if (Equals(value, _saslPassword)) return;

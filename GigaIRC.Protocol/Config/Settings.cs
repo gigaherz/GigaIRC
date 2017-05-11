@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using GDDL.Config;
@@ -23,8 +22,7 @@ namespace GigaIRC.Config
             if (data == null)
                 return;
 
-            Element netsElement;
-            if(data.TryGetValue("Networks", out netsElement))
+            if (data.TryGetValue("Networks", out Element netsElement))
             {
                 var nets = netsElement as Set;
                 if (nets == null)
@@ -36,8 +34,7 @@ namespace GigaIRC.Config
                 }
             }
 
-            Element idsElement;
-            if (data.TryGetValue("Identities", out idsElement))
+            if (data.TryGetValue("Identities", out Element idsElement))
             {
                 var ids = idsElement as Set;
                 if (ids == null)
@@ -58,15 +55,15 @@ namespace GigaIRC.Config
             var data = new Set();
 
             var nets = Element.Set(Networks.Select(network => network.ToConfigString()));
-            data.Add(Element.NamedElement("Networks", nets));
+            data.Add(nets.WithName("Networks"));
 
             var ids = Element.Set(Identities.Select(identity => identity.ToConfigString()));
-            data.Add(Element.NamedElement("Identities", ids));
+            data.Add(ids.WithName("Identities"));
 
             if (DefaultIdentity != null)
             {
                 var def = Element.Backreference(true, $"identities:{DefaultIdentity.NicknameList[0]}");
-                data.Add(Element.NamedElement("DefaultIdentity", def));
+                data.Add(def.WithName("DefaultIdentity"));
             }
 
             File.WriteAllText(fileName, data.ToString(new StringGenerationContext(StringGenerationOptions.Nice)));

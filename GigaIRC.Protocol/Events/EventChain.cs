@@ -9,21 +9,21 @@ namespace GigaIRC.Events
     {
         public delegate bool EventHandler(TContext c, TArgs e);
 
-        readonly List<EventHandler> delegateStack = new List<EventHandler>();
+        readonly List<EventHandler> _delegateStack = new List<EventHandler>();
 
         public virtual void Add(EventHandler toAdd)
         {
-            delegateStack.Insert(0,toAdd);
+            _delegateStack.Insert(0,toAdd);
         }
 
         public virtual void Remove(EventHandler toRemove)
         {
-            delegateStack.Remove(toRemove);
+            _delegateStack.Remove(toRemove);
         }
 
         public virtual bool Invoke(TContext c, TArgs e)
         {
-            return delegateStack.Any(t => t(c, e));
+            return _delegateStack.Any(t => t(c, e));
         }
 
         public static EventChain<TContext, TArgs> operator +(EventChain<TContext, TArgs> e, EventHandler toAdd)

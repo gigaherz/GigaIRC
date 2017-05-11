@@ -17,7 +17,7 @@ namespace GigaIRC.Config
         private string _name;
         public string Name
         {
-            get { return _name; }
+            get => _name;
             set
             {
                 if (Equals(value, _name)) return;
@@ -29,7 +29,7 @@ namespace GigaIRC.Config
         private string _password;
         public string Password
         {
-            get { return _password; }
+            get => _password;
             set
             {
                 if (Equals(value, _password)) return;
@@ -41,7 +41,7 @@ namespace GigaIRC.Config
         private Identity _defaultIdentity;
         public Identity DefaultIdentity
         {
-            get { return _defaultIdentity; }
+            get => _defaultIdentity;
             set
             {
                 if (ReferenceEquals(value, _defaultIdentity)) return;
@@ -101,13 +101,12 @@ namespace GigaIRC.Config
         {
             var el = new Set("network");
 
-            el.Add(Element.NamedElement("Name", Element.StringValue(Name)));
-            el.Add(Element.NamedElement("Password", Element.StringValue(Password)));
+            el.Add(Element.StringValue(Name).WithName("Name"));
+            el.Add(Element.StringValue(Password).WithName("Password"));
 
             if (DefaultIdentity != null)
             {
-                var defIdentity = Element.NamedElement("DefaultIdentity",
-                                                       Element.StringValue(DefaultIdentity.DescriptiveName));
+                var defIdentity = Element.StringValue(DefaultIdentity.DescriptiveName).WithName("DefaultIdentity");
                 el.Add(defIdentity);
             }
 

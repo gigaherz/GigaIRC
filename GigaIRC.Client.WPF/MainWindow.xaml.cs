@@ -261,7 +261,18 @@ namespace GigaIRC.Client.WPF
                     Address = wnd.Server
                 };
 
-                svr.PortRangeCollection.Add(new Tuple<int, int>(6667, 6667));
+                if (wnd.Port.StartsWith("+") && int.TryParse(wnd.Port.Substring(1), out int sport))
+                {
+                    svr.SecurePortRangeCollection.Add(new Tuple<int, int>(sport, sport));
+                }
+                else if (int.TryParse(wnd.Port, out int port))
+                { 
+                    svr.PortRangeCollection.Add(new Tuple<int, int>(port, port));
+                }
+                else
+                {
+                    svr.PortRangeCollection.Add(new Tuple<int, int>(6667, 6667));
+                }
 
                 Session.ConnectTo(svr, id);
             }

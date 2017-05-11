@@ -14,7 +14,7 @@ namespace GigaIRC.Client.WPF.Dialogs
         private string _nickname = "GigaIRC";
         private string _altNickname = "GigaIRC2";
         private string _server = "irc.efnet.net";
-        private ushort? _port = 6667;
+        private string _port = "6667";
         private ICommand _connectCommand;
         private ICommand _cancelCommand;
 
@@ -73,7 +73,7 @@ namespace GigaIRC.Client.WPF.Dialogs
             }
         }
 
-        public ushort? Port
+        public string Port
         {
             get { return _port; }
             set

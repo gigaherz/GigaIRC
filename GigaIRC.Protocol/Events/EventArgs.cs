@@ -6,7 +6,7 @@ namespace GigaIRC.Events
 {
     public class LogEventArgs : EventArgs
     {
-        public string Text { get; private set; }
+        public string Text { get; }
 
         public LogEventArgs(string text)
         {
@@ -17,7 +17,7 @@ namespace GigaIRC.Events
 
     public class FromEventArgs : EventArgs
     {
-        public UserInfo From { get; private set; }
+        public UserInfo From { get; }
 
         public FromEventArgs(UserInfo from)
         {
@@ -27,7 +27,7 @@ namespace GigaIRC.Events
 
     public class TargetEventArgs : FromEventArgs
     {
-        public string Target { get; private set; }
+        public string Target { get; }
 
         public TargetEventArgs(UserInfo from, string target)
             : base(from)
@@ -38,7 +38,7 @@ namespace GigaIRC.Events
 
     public class TextEventArgs : EventArgs
     {
-        public string Text { get; private set; }
+        public string Text { get; }
 
         public TextEventArgs(string text)
         {
@@ -48,7 +48,7 @@ namespace GigaIRC.Events
 
     public class MessageEventArgs : TargetEventArgs
     {
-        public string Text { get; private set; }
+        public string Text { get; }
 
         public MessageEventArgs(UserInfo from, string target, string text)
             : base(from, target)
@@ -59,7 +59,7 @@ namespace GigaIRC.Events
 
     public class KickEventArgs : MessageEventArgs
     {
-        public UserInfo Who { get; private set; }
+        public UserInfo Who { get; }
 
         public KickEventArgs(UserInfo from, string target, UserInfo who, string text)
             : base(from, target, text)
@@ -70,10 +70,10 @@ namespace GigaIRC.Events
 
     public class ModeChangeEventArgs : FromEventArgs
     {
-        public string Target { get; private set; }
-        public bool Added { get; private set; }
-        public string Flag { get; private set; }
-        public string Param { get; private set; }
+        public string Target { get; }
+        public bool Added { get; }
+        public string Flag { get; }
+        public string Param { get; }
 
         public ModeChangeEventArgs(UserInfo from, string target, bool added, string flag, string param)
             : base(from)
@@ -103,7 +103,7 @@ namespace GigaIRC.Events
 
     public class CommandEventArgs : NamedEventArgs
     {
-        public IList<string> Parameters { get; private set; }
+        public IList<string> Parameters { get; }
 
         public CommandEventArgs(Command c)
             : base(c.From, c.CmdText)
@@ -115,7 +115,7 @@ namespace GigaIRC.Events
 
     public class CTCPEventArgs : MessageEventArgs
     {
-        public string Command { get; private set; }
+        public string Command { get; }
 
         public CTCPEventArgs(UserInfo from, CTCPCommand c)
             : base(from, c.Target, c.Text)
@@ -127,8 +127,8 @@ namespace GigaIRC.Events
 
     public class ConnectionStateEventArgs : EventArgs
     {
-        public ConnectionState OldState { get; private set; }
-        public ConnectionState NewState { get; private set; }
+        public ConnectionState OldState { get; }
+        public ConnectionState NewState { get; }
 
         public ConnectionStateEventArgs(ConnectionState oldState, ConnectionState newState)
         {

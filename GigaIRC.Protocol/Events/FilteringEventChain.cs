@@ -41,7 +41,7 @@ namespace GigaIRC.Events
             do
             {
                 found = false;
-                foreach (EventFilter f in delegateStack)
+                foreach (var f in delegateStack)
                 {
                     if(f.Handler == toRemove)
                     {

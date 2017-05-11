@@ -17,7 +17,7 @@ namespace GigaIRC.Protocol
 
         public UserInfo User
         {
-            get { return _user; }
+            get => _user;
             set
             {
                 if (Equals(value, _user)) return;
@@ -29,7 +29,7 @@ namespace GigaIRC.Protocol
 
         public string Prefix
         {
-            get { return _prefix; }
+            get => _prefix;
             set
             {
                 if (value == _prefix) return;
@@ -65,10 +65,10 @@ namespace GigaIRC.Protocol
         private static readonly int[] DefaultValue = { int.MaxValue };
         public int CompareTo(ChannelUser other)
         {
-            int a = Prefix.Select(t => _connection.PreChars.IndexOf(t)).Concat(DefaultValue).Min();
-            int b = other.Prefix.Select(t => _connection.PreChars.IndexOf(t)).Concat(DefaultValue).Min();
+            var minThis = Prefix.Select(t => _connection.PreChars.IndexOf(t)).Concat(DefaultValue).Min();
+            var minOther = other.Prefix.Select(t => _connection.PreChars.IndexOf(t)).Concat(DefaultValue).Min();
 
-            int c = Math.Sign(a - b);
+            var c = Math.Sign(minThis - minOther);
             if (c != 0)
                 return c;
 

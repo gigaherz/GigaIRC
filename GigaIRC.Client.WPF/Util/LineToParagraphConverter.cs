@@ -2,12 +2,13 @@
 using System.Windows.Documents;
 using System.Windows.Input;
 using GigaIRC.Util;
+using System.Text.RegularExpressions;
 
 namespace GigaIRC.Client.WPF.Util
 {
     public class LineToParagraphConverter
     {
-        public static Paragraph ToParagraph(LineInfo line, ICommand linkClickCommand, Paragraph tb = null)
+        public static Paragraph ToParagraph(LineInfo line, ICommand linkClickCommand, Regex nicknamesRegex, Paragraph tb = null)
         {
             if (tb == null) tb = new Paragraph
             {
@@ -21,7 +22,7 @@ namespace GigaIRC.Client.WPF.Util
                 tb.Inlines.Clear();
             }
 
-            var words = WordInfo.Split(line.Line, line.Color);
+            var words = WordInfo.Split(line.Line, line.Color, nicknamesRegex);
             foreach (var word in words)
             {
                 var span = new Run();

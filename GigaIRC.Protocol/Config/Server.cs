@@ -17,7 +17,7 @@ namespace GigaIRC.Config
         private string _displayName;
         public string DisplayName
         {
-            get { return _displayName; }
+            get => _displayName;
             set
             {
                 if (Equals(value, _displayName)) return;
@@ -29,7 +29,7 @@ namespace GigaIRC.Config
         private string _address;
         public string Address
         {
-            get { return _address; }
+            get => _address;
             set
             {
                 if (Equals(value, _address)) return;
@@ -44,7 +44,7 @@ namespace GigaIRC.Config
 
         public string PortRanges
         {
-            get { return SerializeRanges(PortRangeCollection); }
+            get => SerializeRanges(PortRangeCollection);
             set
             {
                 if (Equals(value, SerializeRanges(PortRangeCollection))) return;
@@ -55,7 +55,7 @@ namespace GigaIRC.Config
 
         public string SecurePortRanges
         {
-            get { return SerializeRanges(SecurePortRangeCollection); }
+            get => SerializeRanges(SecurePortRangeCollection);
             set
             {
                 if (Equals(value, SerializeRanges(SecurePortRangeCollection))) return;
@@ -79,9 +79,7 @@ namespace GigaIRC.Config
 
         public Server(Set svr)
         {
-            Element named;
-
-            if (svr.TryGetValue("DisplayName", out named))
+            if (svr.TryGetValue("DisplayName", out var named))
             {
                 var name = named as Value;
                 if (name == null)
@@ -90,27 +88,27 @@ namespace GigaIRC.Config
                 DisplayName = name.String;
             }
 
-            if (svr.TryGetValue("Address", out named))
+            if (svr.TryGetValue("Address", out var addrd))
             {
-                var addr = named as Value;
+                var addr = addrd as Value;
                 if (addr == null)
                     throw new InvalidDataException();
 
                 Address = addr.String;
             }
 
-            if (svr.TryGetValue("PortRanges", out named))
+            if (svr.TryGetValue("PortRanges", out var portd))
             {
-                var ports = named as Set;
+                var ports = portd as Set;
                 if (ports == null)
                     throw new InvalidDataException();
 
                 LoadRanges(PortRangeCollection, ports);
             }
 
-            if (svr.TryGetValue("SecurePortRanges", out named))
+            if (svr.TryGetValue("SecurePortRanges", out var portsd))
             {
-                var ports = named as Set;
+                var ports = portsd as Set;
                 if (ports == null)
                     throw new InvalidDataException();
 
@@ -151,29 +149,29 @@ namespace GigaIRC.Config
         {
             var el = new Set("server");
 
-            var name = Element.NamedElement("DisplayName", Element.StringValue(DisplayName));
+            var name = Element.StringValue(DisplayName).WithName("DisplayName");
             el.Add(name);
 
-            var addr = Element.NamedElement("Address", Element.StringValue(Address));
+            var addr = Element.StringValue(Address).WithName("Address");
             el.Add(addr);
 
             if (PortRangeCollection.Count > 0)
             {
-                var ranges = Element.NamedElement("PortRanges", Element.Set(PortRangeCollection.Select(
+                var ranges = Element.Set(PortRangeCollection.Select(
                     a =>
-                    a.Item1 == a.Item2
-                        ? (Element) Element.IntValue(a.Item1)
-                        : (Element) Element.Set(Element.IntValue(a.Item1), Element.IntValue(a.Item2))).ToArray()));
+                        a.Item1 == a.Item2
+                            ? (Element) Element.IntValue(a.Item1)
+                            : (Element) Element.Set(Element.IntValue(a.Item1), Element.IntValue(a.Item2))).ToArray()).WithName("PortRanges");
                 el.Add(ranges);
             }
 
             if (SecurePortRangeCollection.Count > 0)
             {
-                var sranges = Element.NamedElement("SecurePortRanges", Element.Set(SecurePortRangeCollection.Select(
+                var sranges = Element.Set(SecurePortRangeCollection.Select(
                     a =>
-                    a.Item1 == a.Item2
-                        ? (Element) Element.IntValue(a.Item1)
-                        : (Element) Element.Set(Element.IntValue(a.Item1), Element.IntValue(a.Item2))).ToArray()));
+                        a.Item1 == a.Item2
+                            ? (Element) Element.IntValue(a.Item1)
+                            : (Element) Element.Set(Element.IntValue(a.Item1), Element.IntValue(a.Item2))).ToArray()).WithName("SecurePortRanges");
                 el.Add(sranges);
             }
             return el;

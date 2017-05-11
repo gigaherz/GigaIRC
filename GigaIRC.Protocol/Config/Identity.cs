@@ -5,7 +5,6 @@ using GigaIRC.Annotations;
 using System.Runtime.CompilerServices;
 using GigaIRC.Util;
 using System.IO;
-using System.Collections.Generic;
 using System.Linq;
 
 namespace GigaIRC.Config
@@ -17,7 +16,7 @@ namespace GigaIRC.Config
         private string _descriptiveName;
         public string DescriptiveName
         {
-            get { return _descriptiveName; }
+            get => _descriptiveName;
             set
             {
                 if (Equals(value, _descriptiveName)) return;
@@ -29,7 +28,7 @@ namespace GigaIRC.Config
         private string _fullName;
         public string FullName
         {
-            get { return _fullName; }
+            get => _fullName;
             set
             {
                 if (Equals(value, _fullName)) return;
@@ -41,7 +40,7 @@ namespace GigaIRC.Config
         private string _username;
         public string Username
         {
-            get { return _username; }
+            get => _username;
             set
             {
                 if (Equals(value, _username)) return;
@@ -54,7 +53,7 @@ namespace GigaIRC.Config
 
         public string Nicknames
         {
-            get { return string.Join(Environment.NewLine, NicknameList); }
+            get => string.Join(Environment.NewLine, NicknameList);
             set
             {
                 if (Equals(value, string.Join(Environment.NewLine, NicknameList))) return;
@@ -124,10 +123,10 @@ namespace GigaIRC.Config
         {
             return new Set("identity")
             {
-                Element.NamedElement("DescriptiveName", Element.StringValue(DescriptiveName)),
-                Element.NamedElement("FullName", Element.StringValue(FullName)),
-                Element.NamedElement("Username", Element.StringValue(Username)),
-                Element.NamedElement("Nicknames", Element.Set(NicknameList.Select(Element.StringValue).ToArray()))
+                Element.StringValue(DescriptiveName).WithName("DescriptiveName"),
+                Element.StringValue(FullName).WithName("FullName"),
+                Element.StringValue(Username).WithName("Username"),
+                Element.Set(NicknameList.Select(Element.StringValue).ToArray()).WithName("Nicknames")
             };
         }
 

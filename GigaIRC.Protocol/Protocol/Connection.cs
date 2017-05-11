@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
-using System.IO;
 using System.Linq;
 using System.Net;
 using System.Runtime.CompilerServices;
@@ -49,7 +48,7 @@ namespace GigaIRC.Protocol
 
         public string Address
         {
-            get { return _address; }
+            get => _address;
             private set
             {
                 if (value == _address) return;
@@ -60,7 +59,7 @@ namespace GigaIRC.Protocol
 
         public int Port
         {
-            get { return _port; }
+            get => _port;
             private set
             {
                 if (value == _port) return;
@@ -71,7 +70,7 @@ namespace GigaIRC.Protocol
 
         public bool Secure
         {
-            get { return _secure; }
+            get => _secure;
             private set
             {
                 if (value == _secure) return;
@@ -82,7 +81,7 @@ namespace GigaIRC.Protocol
 
         public string Network
         {
-            get { return _network; }
+            get => _network;
             set
             {
                 if (value == _network) return;
@@ -93,7 +92,7 @@ namespace GigaIRC.Protocol
 
         public ConnectionState State
         {
-            get { return _state; }
+            get => _state;
             private set
             {
                 if (value == _state) return;
@@ -104,7 +103,7 @@ namespace GigaIRC.Protocol
 
         public UserInfo Me
         {
-            get { return _me; }
+            get => _me;
             private set
             {
                 if (Equals(value, _me)) return;
@@ -213,7 +212,7 @@ namespace GigaIRC.Protocol
         }
 #endif
 
-        void CTCPCommandReceived(Command cmd)
+        private void CTCPCommandReceived(Command cmd)
         {
             var ctcp = new CTCPCommand(cmd);
             
@@ -253,7 +252,7 @@ namespace GigaIRC.Protocol
             }
         }
 
-        void CTCPReplyReceived(Command cmd)
+        private void CTCPReplyReceived(Command cmd)
         {
             var ctcp = new CTCPCommand(cmd);
 
@@ -267,7 +266,7 @@ namespace GigaIRC.Protocol
             }
         }
 
-        void MessageReceived(Command cmd)
+        private void MessageReceived(Command cmd)
         {
             var chars = cmd.Params[1].ToCharArray();
             // if is a CTCP command
@@ -291,7 +290,7 @@ namespace GigaIRC.Protocol
             }
         }
 
-        void NoticeReceived(Command cmd)
+        private void NoticeReceived(Command cmd)
         {
             // if is a CTCP reply
             if (cmd.Params[1].ToCharArray()[0] == '\x1')

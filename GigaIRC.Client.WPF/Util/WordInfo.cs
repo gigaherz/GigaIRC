@@ -34,7 +34,12 @@ namespace GigaIRC.Util
             Word = wrd;
         }
 
-        public static IEnumerable<WordInfo> Split(string line, ColorCode defColor)
+        public WordInfo(WordInfo word, Uri link, string wrd)
+            : this (word.BackColor, word.ForeColor, word.IsBold, word.IsItalic, word.IsUnderline, word.IsReverse, link, wrd)
+        {
+        }
+
+        public static IEnumerable<WordInfo> Split(string line, ColorCode defColor, Regex nicknamesRegex)
         {
             char[] chars = (line + (char)0 + (char)0).ToCharArray();
 
@@ -171,7 +176,8 @@ namespace GigaIRC.Util
             if (word != "")
             {
                 foreach(var e in FindLinks(cback, cfore, isBold, isItalic, isUnderline, isReverse, word))
-                    yield return e;
+                    foreach(var ee in FindNicknames(e, nicknamesRegex))
+                        yield return ee;
             }
         }
 
@@ -220,6 +226,56 @@ namespace GigaIRC.Util
 
             if(wrd.Length > 0)
                 yield return new WordInfo(back, fore, bold, italic, under, rev, null, wrd);
+        }
+
+        private static IEnumerable<WordInfo> FindNicknames(WordInfo word, Regex wordsMatch)
+        {
+            if (wordsMatch == null)
+            {
+                yield return word;
+                yield break;
+            }
+
+            string wrd = word.Word;
+
+            var match = FindUrl.Match(wrd);
+            while (match.Success)
+            {
+                var g = match.Groups[0];
+
+                Uri uri = null;
+                try
+                {
+                    var text = g.Value;
+
+                    uri = new Uri("list-item-select://" + text);
+                }
+                catch (Exception)
+                {
+                    // ignore
+                }
+
+                var idx = g.Index;
+                var len = g.Length;
+                if (uri != null)
+                {
+                    if (idx > 0)
+                    {
+                        yield return new WordInfo(word, null, wrd.Substring(0, idx));
+                    }
+                    yield return new WordInfo(word, uri, g.Value);
+                }
+                else
+                {
+                    yield return new WordInfo(word, null, wrd.Substring(0, idx + len));
+                }
+
+                wrd = wrd.Substring(idx + len);
+                match = FindUrl.Match(wrd);
+            }
+
+            if (wrd.Length > 0)
+                yield return new WordInfo(word, null, wrd);
         }
     }
 }

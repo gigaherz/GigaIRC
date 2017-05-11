@@ -1,7 +1,11 @@
 ﻿using System;
+using System.Collections;
 using System.IO;
 using System.Net;
+using System.Net.Security;
 using System.Net.Sockets;
+using System.Security.Authentication;
+using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -24,23 +28,69 @@ namespace GigaIRC.Protocol
             _logger = connection.Logger;
         }
 
+        private bool ValidateServerCertificate(
+            object sender,
+            X509Certificate certificate,
+            X509Chain chain,
+            SslPolicyErrors sslPolicyErrors)
+        {
+            if (sslPolicyErrors == SslPolicyErrors.None)
+                return true;
+
+            _logger.LogLine(2, "Certificate error: {0}", sslPolicyErrors);
+
+            return true;
+        }
+
         public async void Connect()
         {
             try
             {
-                _logger.LogLine(1, "Opening Connection...");
+                bool secure = false;
+                int port;
+                var address = _connection.Server.Address;
+
+                if (_connection.Server.SecurePortRangeCollection.Count > 0)
+                {
+                    secure = true;
+                    port = _connection.Server.SecurePortRangeCollection[0].Item1;
+                    _logger.LogLine(1, "Opening Secure Connection...");
+                }
+                else
+                {
+                    port = _connection.Server.PortRangeCollection[0].Item1;
+                    _logger.LogLine(1, "Opening Connection...");
+                }
 
                 _connection.ChangeState(ConnectionState.Connecting);
 
                 _ircConnection = new TcpClient();
-                await _ircConnection.ConnectAsync(_connection.Server.Address, _connection.Server.PortRangeCollection[0].Item1);
+                await _ircConnection.ConnectAsync(address, port);
 
                 _connection.UpdateRemote((IPEndPoint)_ircConnection.Client.RemoteEndPoint);
 
                 lock (this)
                 {
-                    _ircReader = new StreamReader(_ircConnection.GetStream(), Encoding.UTF8);
-                    _ircWriter = new StreamWriter(_ircConnection.GetStream(), Encoding.UTF8);
+                    Stream stream = _ircConnection.GetStream();
+
+                    //if (_connection.Server.SecurePortRanges.Length > 0)
+                    if (secure)
+                    {
+                        // Create an SSL stream that will close the client's stream.
+                        var sslStream = new SslStream(
+                            stream,
+                            false,
+                            ValidateServerCertificate,
+                            null
+                        );
+
+                        sslStream.AuthenticateAsClient(address);
+
+                        stream = sslStream;
+                    }
+
+                    _ircReader = new StreamReader(stream, Encoding.UTF8);
+                    _ircWriter = new StreamWriter(stream, Encoding.UTF8);
                 }
 
                 _logger.LogLine(1, "Sending user info...");

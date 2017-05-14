@@ -65,6 +65,6 @@
         </Grid>
         <TextBox x:Name="Input" Grid.Row="2" 
                  Visibility="{Binding Path=ShowInput, Converter={StaticResource BoolToVis}}" 
-                 PreviewKeyDown="Input_PreviewKeyDown" />
+                 PreviewKeyDown="Input_PreviewKeyDown" TextChanged="Input_TextChanged" />
     </Grid>
 </dockable:DockableBase>

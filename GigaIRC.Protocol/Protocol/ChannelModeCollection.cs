@@ -27,7 +27,7 @@ namespace GigaIRC.Protocol
 
         public void Remove(char mchar)
         {
-            Items.Remove(Items.Single(u => u.Key == mchar));
+            Items.Remove(Items.SingleOrDefault(u => u.Key == mchar));
         }
 
         public void Update(char mchar, string value)

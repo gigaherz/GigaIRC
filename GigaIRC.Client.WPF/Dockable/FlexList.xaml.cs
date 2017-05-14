@@ -12,6 +12,8 @@ using GigaIRC.Util;
 using System.Text.RegularExpressions;
 using System.Windows.Threading;
 using System.Diagnostics;
+using GigaIRC.Client.WPF.Completion;
+using System.Collections.Generic;
 
 namespace GigaIRC.Client.WPF.Dockable
 {
@@ -231,6 +233,8 @@ namespace GigaIRC.Client.WPF.Dockable
         {
             if (_matchListItemsInText)
                 _nicknamesRegex = new Regex("\b(" + string.Join("|", ListItems) + ")\b", RegexOptions.IgnoreCase);
+
+            ListCollectionChanged();
         }
 
         private void OnLinkClicked(object obj)
@@ -333,6 +337,9 @@ namespace GigaIRC.Client.WPF.Dockable
         {
             return Lines.Count;
         }
+        
+        public readonly List<ITabCompletion> TabCompletionHandlers = new List<ITabCompletion>();
+        private bool changingOnPurpose = false;
 
         private void Input_PreviewKeyDown(object sender, KeyEventArgs e)
         {
@@ -343,8 +350,22 @@ namespace GigaIRC.Client.WPF.Dockable
             }
             else if (e.Key == Key.Tab)
             {
-
+                changingOnPurpose = true;
+                TabCompletionHandlers.Any(h => h.TabPressed());
+                e.Handled = true;
+                changingOnPurpose = false;
             }
+        }
+
+        private void Input_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            if (!changingOnPurpose)
+                TabCompletionHandlers.ForEach(h => h.TextChanged());
+        }
+
+        private void ListCollectionChanged()
+        {
+            TabCompletionHandlers.ForEach(h => h.ListChanged());
         }
 
         public void Close()

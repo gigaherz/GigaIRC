@@ -78,6 +78,8 @@
       <SubType>Designer</SubType>
     </ApplicationDefinition>
     <Compile Include="Completion\CommandHandler.cs" />
+    <Compile Include="Completion\ITabCompletion.cs" />
+    <Compile Include="Completion\NicknameTabCompletion.cs" />
     <Compile Include="Dialogs\QuickConnect.xaml.cs">
       <DependentUpon>QuickConnect.xaml</DependentUpon>
     </Compile>

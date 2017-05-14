@@ -20,7 +20,7 @@ namespace GigaIRC.Client.WPF.Dockable
         // For the treeview only
         public bool IsExpanded
         {
-            get { return _isExpanded; }
+            get => _isExpanded;
             set
             {
                 if (value == _isExpanded) return;
@@ -31,7 +31,7 @@ namespace GigaIRC.Client.WPF.Dockable
 
         public string Title
         {
-            get { return _title; }
+            get => _title;
             set
             {
                 if (value == _title) return;
@@ -42,7 +42,7 @@ namespace GigaIRC.Client.WPF.Dockable
 
         public PanelType PanelType
         {
-            get { return _panelType; }
+            get => _panelType;
             set
             {
                 if (value == _panelType) return;
@@ -53,7 +53,7 @@ namespace GigaIRC.Client.WPF.Dockable
 
         public Brush DesignBackground
         {
-            get { return _designBackground; }
+            get => _designBackground;
             set
             {
                 if (Equals(value, _designBackground)) return;

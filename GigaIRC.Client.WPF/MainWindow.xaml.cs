@@ -1,9 +1,13 @@
 ﻿using System;
 using System.Collections.Specialized;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Windows;
+using System.Windows.Threading;
+using GigaIRC.Annotations;
 using GigaIRC.Client.WPF.Completion;
 using GigaIRC.Client.WPF.Dialogs;
 using GigaIRC.Client.WPF.Dockable;
@@ -16,10 +20,14 @@ using WebBrowser = GigaIRC.Client.WPF.Dockable.WebBrowser;
 
 namespace GigaIRC.Client.WPF
 {
-    public partial class MainWindow
+    public partial class MainWindow : INotifyPropertyChanged
     {
         private Dockable.Preferences _preferences;
+
         private SessionTree _treeList;
+        private LayoutAnchorable _treeListAnchorable;
+
+        public bool TreeListShown => !(_treeListAnchorable?.IsHidden ?? true);
 
         private LayoutAnchorablePane _sidePaneLeft;
         private LayoutAnchorablePane _sidePaneRight;
@@ -33,8 +41,38 @@ namespace GigaIRC.Client.WPF
         public WindowManager WindowManager => _windows;
 
         private readonly CommandHandler _commandHandler = new CommandHandler();
-
         public CommandHandler CommandHandler => _commandHandler;
+
+        private bool _statusBarVisible;
+        public bool StatusBarVisible
+        {
+            get => _statusBarVisible;
+            set
+            {
+                if (value == _statusBarVisible) return;
+                _statusBarVisible = value;
+                OnPropertyChanged();
+                OnPropertyChanged(nameof(StatusBarVisibility));
+            }
+        }
+
+        public Visibility StatusBarVisibility => StatusBarVisible ? Visibility.Visible : Visibility.Collapsed;
+
+        private bool _toolbarVisible = true;
+
+        public bool ToolbarVisible
+        {
+            get => _toolbarVisible;
+            set
+            {
+                if (value == _toolbarVisible) return;
+                _toolbarVisible = value;
+                OnPropertyChanged();
+                OnPropertyChanged(nameof(ToolbarVisibility));
+            }
+        }
+
+        public Visibility ToolbarVisibility => ToolbarVisible ? Visibility.Visible : Visibility.Collapsed;
 
         public MainWindow()
         {
@@ -125,7 +163,7 @@ namespace GigaIRC.Client.WPF
             }
         }
 
-        private void AttachSide(DockableBase panel, bool right)
+        private LayoutAnchorable AttachSide(DockableBase panel, bool right)
         {
             var anchorable = new LayoutAnchorable
             {
@@ -140,7 +178,7 @@ namespace GigaIRC.Client.WPF
                 if (args.PropertyName == "Title")
                     panel.LayoutParent.Title = panel.Title;
             };
-
+            
             anchorable.Closed += (sender, args) => panel.OnClosed();
             anchorable.Closing += (sender, args) => args.Cancel = panel.OnClosing();
 
@@ -165,6 +203,8 @@ namespace GigaIRC.Client.WPF
             }
 
             pane.Children.Add(anchorable);
+
+            return anchorable;
         }
 
         public RelayCommand OpenPreferencesCommand => new RelayCommand(_ => OpenPreferences());
@@ -203,13 +243,24 @@ namespace GigaIRC.Client.WPF
             DockingManager.ActiveContent = wnd;
         }
 
-        public RelayCommand ShowTreeListCommand => new RelayCommand(_ => ShowTreeList());
+        public RelayCommand ShowTreeListCommand => new RelayCommand(_ => ToggleTreeList());
+        private void ToggleTreeList()
+        {
+            if (_treeList != null)
+            {
+                if (_treeListAnchorable.IsHidden)
+                    _treeListAnchorable.Show();
+                else
+                    _treeListAnchorable.Hide();
+            }
+        }
         private void ShowTreeList()
         {
             if (_treeList == null)
             {
-                _treeList = new SessionTree {Root = _windows.Data};
-                _treeList.Closed += (sender, args) => _treeList = null;
+                _treeList = new SessionTree { Root = _windows.Data };
+                _treeList.Closed += (sender, args) =>
+                    _treeList = null;
                 _treeList.PropertyChanged += (sender, args) =>
                 {
                     if (args.PropertyName == nameof(_treeList.SelectedWindow))
@@ -221,7 +272,15 @@ namespace GigaIRC.Client.WPF
                     }
                 };
 
-                AttachSide(_treeList, false);
+                _treeListAnchorable = AttachSide(_treeList, false);
+                _treeListAnchorable.PropertyChanged += (sender, args) =>
+                {
+                    if (args.PropertyName == "IsHidden")
+                        OnPropertyChanged(nameof(TreeListShown));
+                };
+
+                OnPropertyChanged(nameof(TreeListShown));
+                //_treeListAnchorable.
             }
             DockingManager.ActiveContent = _treeList;
         }
@@ -991,6 +1050,7 @@ namespace GigaIRC.Client.WPF
                 window.Closing += Channel_Closing;
                 window.ItemsSource = connection.Channels[e.Target].Users;
                 window.ListItemDoubleClickCommand = new RelayCommand(ChannelListItem_DoubleClick);
+                window.TabCompletionHandlers.Add(new NicknameTabCompletion(window));
             }
 
             _windows[connection, e.Target].AddLine(0, TimeStamp.Format("You Joined {0}.", e.Target));
@@ -1019,6 +1079,14 @@ namespace GigaIRC.Client.WPF
         private void DockingManager_DocumentClosing(object sender, Xceed.Wpf.AvalonDock.DocumentClosingEventArgs e)
         {
             ((DockableBase)e.Document.Content).OnClosing();
+        }
+
+        public event PropertyChangedEventHandler PropertyChanged;
+
+        [NotifyPropertyChangedInvocator]
+        protected virtual void OnPropertyChanged([CallerMemberName] string propertyName = null)
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
     }
 }

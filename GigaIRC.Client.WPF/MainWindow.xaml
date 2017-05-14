@@ -29,7 +29,11 @@
                 <MenuItem Header="Exit" Command="{Binding ExitCommand}" />
             </MenuItem>
             <MenuItem Header="View">
-                <MenuItem Header="Session Tree" Command="{Binding ShowTreeListCommand}"/>
+                <MenuItem Header="Show Statusbar" IsCheckable="True" IsChecked="{Binding StatusBarVisible}" />
+                <MenuItem Header="Show Toolbar" IsCheckable="True" IsChecked="{Binding ToolbarVisible}" />
+                <MenuItem Header="Show Session Tree" IsCheckable="True" IsChecked="{Binding TreeListShown,Mode=OneWay}" Command="{Binding ShowTreeListCommand}"/>
+                <Separator />
+                <MenuItem Header="Open New Web Browser Tab" Command="{Binding NewBrowserCommand}"/>
             </MenuItem>
             <MenuItem Header="Connection">
                 <MenuItem Header="New..." Command="{Binding NewConnectionCommand}" />
@@ -39,7 +43,7 @@
                 <MenuItem Header="Save Settings" Command="{Binding SaveSettingsCommand}"/>
             </MenuItem>
         </Menu>
-        <ToolBarTray Grid.Row="1">
+        <ToolBarTray Grid.Row="1" Visibility="{Binding ToolbarVisibility}">
             <ToolBar x:Name="MainToolbar">
                 <Button Command="{Binding NewConnectionCommand}">
                     <Image Width="16" Height="16" Margin="1" Source="{StaticResource NewConnection}" />
@@ -64,7 +68,7 @@
                 </avalon:LayoutPanel>
             </avalon:LayoutRoot>
         </avalon:DockingManager>
-        <StatusBar Grid.Row="3">
+        <StatusBar Grid.Row="3" Visibility="{Binding StatusBarVisibility}">
             <StatusBarItem Content="WIP"/>
         </StatusBar>
     </Grid>

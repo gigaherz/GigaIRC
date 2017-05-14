@@ -26,7 +26,7 @@ namespace GigaIRC.Client.WPF.Completion
 
         public bool TabPressed()
         {
-            var text = target.Input.Text;
+            var text = target.Input.Text.ToLowerInvariant();
             var before = text.Substring(0, target.Input.SelectionStart);
 
             var wordStart = before.LastIndexOfAny(Whitespace) + 1;
@@ -54,13 +54,17 @@ namespace GigaIRC.Client.WPF.Completion
             // We may have to re-compute the rotation list even if the prefix hasn't changed (quit/part/join/kick/nickchange)
             if (rotation == null)
             {
-                rotation = (target.ItemsSource as ChannelUserCollection).Select(Convert.ToString).Where(nick => nick.StartsWith(prefix)).ToList();
+                rotation = (target.ItemsSource as ChannelUserCollection)
+                    .Select(e => e.User.Nickname)
+                    .Where(nick => nick.ToLowerInvariant()
+                    .StartsWith(prefix))
+                    .ToList();
             }
 
             if (rotation.Count == 0)
                 return false;
 
-            var wordNumber = (rotation.IndexOf(word) + 1) % rotation.Count;
+            var wordNumber = (rotation.FindIndex(s => string.Compare(s, word, StringComparison.OrdinalIgnoreCase) == 0) + 1) % rotation.Count;
 
             if (wordNumber < 0) wordNumber = 0;
 

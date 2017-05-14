@@ -5,6 +5,7 @@ using GDDL.Config;
 using GDDL.Structure;
 using GigaIRC.Util;
 using System.Collections.ObjectModel;
+using System.Configuration;
 
 namespace GigaIRC.Config
 {
@@ -14,6 +15,11 @@ namespace GigaIRC.Config
         public ObservableCollection<Identity> Identities { get; } = new ObservableCollection<Identity>();
 
         public Identity DefaultIdentity { get; set; }
+
+        public delegate void SettingsHandler(Set configRoot);
+
+        public event SettingsHandler Load;
+        public event SettingsHandler Save;
 
         public void LoadFromFile(string fileName)
         {
@@ -48,11 +54,15 @@ namespace GigaIRC.Config
                     Identities.Add(new Identity(ident));
                 }
             }
+
+            Load?.Invoke(data);
         }
 
         public void SaveToFile(string fileName)
         {
             var data = new Set();
+            
+            Save?.Invoke(data);
 
             var nets = Element.Set(Networks.Select(network => network.ToConfigString()));
             data.Add(nets.WithName("Networks"));

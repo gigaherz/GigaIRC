@@ -1,12 +1,11 @@
 ﻿using System;
 using System.Collections.Specialized;
 using System.ComponentModel;
-using System.Diagnostics;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Windows;
-using System.Windows.Threading;
+using GDDL.Structure;
 using GigaIRC.Annotations;
 using GigaIRC.Client.WPF.Completion;
 using GigaIRC.Client.WPF.Dialogs;
@@ -27,7 +26,14 @@ namespace GigaIRC.Client.WPF
         private SessionTree _treeList;
         private LayoutAnchorable _treeListAnchorable;
 
-        public bool TreeListShown => !(_treeListAnchorable?.IsHidden ?? true);
+        public bool TreeListShown
+        {
+            get => !(_treeListAnchorable?.IsHidden ?? true);
+            set {
+                if (value) _treeListAnchorable.Show();
+                else _treeListAnchorable.Hide();
+            }
+        }
 
         private LayoutAnchorablePane _sidePaneLeft;
         private LayoutAnchorablePane _sidePaneRight;
@@ -83,11 +89,48 @@ namespace GigaIRC.Client.WPF
             ShowDebug();
             ShowTreeList();
 
+            Session.Settings.Load += Settings_Load;
+            Session.Settings.Save += Settings_Save;
+
             Session.Settings.LoadFromFile(@"settings.cfg");
 
             AttachEvents();
 
             _windows["@@debug@@"].AddLine(0, "Program Initialization Finished.");
+        }
+
+        private void Settings_Load(Set configRoot)
+        {
+            if(configRoot.TryGetValue("Ui", out Element uid))
+            {
+                if (uid is Set ui)
+                {
+                    if (ui.TryGetValue("ShowToolbar", out Element tbd) && tbd is Value tb)
+                    {
+                        ToolbarVisible = tb.Boolean;
+                    }
+
+                    if (ui.TryGetValue("ShowStatusBar", out Element sbd) && sbd is Value sb)
+                    {
+                        StatusBarVisible = sb.Boolean;
+                    }
+
+                    if (ui.TryGetValue("ShowTreeList", out Element tld) && tld is Value tl)
+                    {
+                        TreeListShown = tl.Boolean;
+                    }
+                }
+            }
+        }
+
+        private void Settings_Save(Set configRoot)
+        {
+            configRoot.Put("Ui", new Set
+            {
+                Element.BooleanValue(ToolbarVisible).WithName("ShowToolbar"),
+                Element.BooleanValue(StatusBarVisible).WithName("ShowStatusBar"),
+                Element.BooleanValue(TreeListShown).WithName("ShowTreeList")
+            });
         }
 
         private void Window_Closing(object sender, CancelEventArgs e)
